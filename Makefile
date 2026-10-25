@@ -6,6 +6,7 @@ DERIVED = build
 .PHONY: debug release run-debug run-release project clean reset
 
 project:
+	@echo "Sondr: building in $(CURDIR)"
 	xcodegen generate
 
 debug: project
