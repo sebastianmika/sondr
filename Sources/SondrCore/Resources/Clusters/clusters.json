@@ -1,0 +1,10 @@
+[
+  {"id": 0, "name": "kicks",     "color": "orange",  "keywords": ["drums", "kick", "deep", "boom", "thump"]},
+  {"id": 1, "name": "snares",    "color": "red",   "keywords": ["drums", "snare", "clap", "rim", "snr"]},
+  {"id": 2, "name": "hats/perc", "color": "cyan",   "keywords": ["drums", "hat", "shaker", "perc", "tom", "conga", "tamb", "bell", "cowbell"]},
+  {"id": 3, "name": "bass",      "color": "green",   "keywords": ["bass", "sub", "reese"]},
+  {"id": 4, "name": "pads",      "color": "purple", "keywords": ["pad", "ambient", "drone", "texture", "wash", "string"]},
+  {"id": 5, "name": "leads",     "color": "yellow",  "keywords": ["lead", "pluck", "arp", "stab", "acid"]},
+  {"id": 6, "name": "vox chops", "color": "magenta",   "keywords": ["vox", "vocal", "voc", "chop", "choir", "chant", "ahh", "ooh", "whisper"]},
+  {"id": 7, "name": "fx/risers", "color": "blue",   "keywords": ["fx", "riser", "impact", "whoosh", "sweep", "crash", "downlift", "noise"]}
+]

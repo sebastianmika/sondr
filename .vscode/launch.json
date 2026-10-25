@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:sondr}",
+            "name": "Debug sondr-testlib",
+            "target": "sondr-testlib",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug sondr-testlib"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:sondr}",
+            "name": "Release sondr-testlib",
+            "target": "sondr-testlib",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release sondr-testlib"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:sondr}",
+            "name": "Debug sondr-multisamples",
+            "target": "sondr-multisamples",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug sondr-multisamples"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:sondr}",
+            "name": "Release sondr-multisamples",
+            "target": "sondr-multisamples",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release sondr-multisamples"
+        }
+    ]
+}

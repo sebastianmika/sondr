@@ -1,0 +1,33 @@
+name: Sondr
+options:
+  bundleIdPrefix: com.sebastianmika
+  deploymentTarget:
+    macOS: "15.0"
+packages:
+  SondrCore:
+    path: .
+targets:
+  Sondr:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: SondrCore
+        product: SondrCore
+    postBuildScripts:
+      - name: Copy Core ML models into the app
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ -f "${SRCROOT}/Models/model_version.txt" ]; then
+            rsync -a --delete "${SRCROOT}/Models/" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Models/"
+          else
+            echo "warning: Models/ is not built (see README); the app will look in ~/Library/Application Support/Sondr/Models"
+          fi
+    settings:
+      base:
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.sebastianmika.sondr
+        SWIFT_VERSION: "6.0"
+        ARCHS: arm64
+        CODE_SIGN_IDENTITY: "-"
