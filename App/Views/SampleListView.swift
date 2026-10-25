@@ -47,7 +47,7 @@ struct SampleListView: View {
             TableColumn("Cluster") { row in
                 if let cluster = clusterOf(row) {
                     Label(cluster.name, systemImage: "circle.fill")
-                        .labelStyle(ClusterLabelStyle(color: clusterColor(cluster.id)))
+                        .labelStyle(ClusterLabelStyle(color: clusterColor(cluster.id, app.palette)))
                 } else {
                     Text("–").foregroundStyle(.tertiary)
                 }

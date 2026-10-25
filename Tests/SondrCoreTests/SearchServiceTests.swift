@@ -49,7 +49,7 @@ private func makeSearch(_ specs: [Spec] = specs) async throws -> (LibraryDatabas
     let index = VectorIndex()
     try await database.writer.write { db in
         try db.execute(sql: "INSERT INTO locations (id, path, added_at) VALUES (1, '/lib1', 0), (2, '/lib2', 0)")
-        for k in 0..<8 { try db.execute(sql: "INSERT INTO clusters (id, name) VALUES (?, 'c')", arguments: [k]) }
+        for k in Set(specs.compactMap(\.cluster)) { try db.execute(sql: "INSERT INTO clusters (id, name) VALUES (?, 'c')", arguments: [k]) }
         for spec in specs {
             let derived = spec.state == "done"
             try db.execute(

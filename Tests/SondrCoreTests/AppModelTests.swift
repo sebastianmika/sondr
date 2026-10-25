@@ -101,7 +101,7 @@ private struct Workspace {
     #expect(await app.vectorIndex.count == 24)
     #expect(app.indexProgress == nil)
     #expect(app.lastIndexSummary?.done == 24)
-    #expect(app.clusters.count == 8)
+    #expect(app.clusters.count == (try ClusterCentres.seed().count))
     #expect(app.clusters.map(\.count).reduce(0, +) + app.unsortedCount == 24)
 }
 

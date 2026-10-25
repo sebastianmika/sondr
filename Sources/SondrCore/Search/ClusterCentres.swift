@@ -1,68 +1,96 @@
 import Foundation
 import GRDB
 
-public struct ClusterDefinition: Decodable, Equatable, Sendable {
-    public let id: Int
-    public let name: String
-    public let color: String
-    public let keywords: [String]
+public struct ClusterDefinition: Equatable, Sendable, Identifiable {
+    /// Negative for a cluster that is not saved yet (see ``ClusterReassignJob/commit(_:edited:)``).
+    public var id: Int
+    public var name: String
+    /// `#RRGGBB`.
+    public var color: String
+    /// Words separated by spaces; their text embedding is the cluster centre.
+    public var keywords: String
 
-    /// The text that is embedded to get the cluster centre.
-    public var prompt: String { keywords.joined(separator: " ") }
+    public init(id: Int, name: String, color: String, keywords: String) {
+        self.id = id
+        self.name = name
+        self.color = color
+        self.keywords = keywords
+    }
 }
 
 public enum ClusterError: Error, Equatable, LocalizedError {
     case catalogMissing
     case catalogInvalid(String)
+    /// The clusters would be empty, or one has no name.
+    case invalidEdit(String)
+    /// An earlier cluster change has not been applied to all samples yet.
+    case pending
 
     public var errorDescription: String? {
         switch self {
         case .catalogMissing: return "clusters.json is missing from the app bundle."
         case .catalogInvalid(let why): return "clusters.json is invalid: \(why)"
+        case .invalidEdit(let why): return why
+        case .pending: return "An earlier change of the clusters is still being applied."
         }
     }
 }
 
-/// The eight fixed categories and their centre vectors.
+/// The clusters and their centre vectors.
 ///
-/// Ids are 0...7 everywhere (the legacy app stored 1...8 against ids 0...7). A centre is the
-/// text embedding of a category's keyword bag; centres are computed once per model version and
-/// cached in `cluster_centres`.
+/// The `clusters` table is the truth and the user edits it. The bundled `clusters.json` only seeds
+/// it while the table is empty. A centre is the text embedding of a cluster's keywords; centres
+/// are computed once per model version and cached in `cluster_centres`.
 public enum ClusterCentres {
-    public static func catalog() throws -> [ClusterDefinition] {
+    private struct SeedEntry: Decodable {
+        let id: Int
+        let name: String
+        let color: String
+        let keywords: [String]
+    }
+
+    /// The clusters a new library starts with.
+    public static func seed() throws -> [ClusterDefinition] {
         guard let url = Bundle.module.url(forResource: "clusters", withExtension: "json", subdirectory: "Clusters"),
             let data = try? Data(contentsOf: url)
         else { throw ClusterError.catalogMissing }
-        let clusters: [ClusterDefinition]
-        do { clusters = try JSONDecoder().decode([ClusterDefinition].self, from: data) } catch {
+        do {
+            return try JSONDecoder().decode([SeedEntry].self, from: data).map {
+                ClusterDefinition(id: $0.id, name: $0.name, color: $0.color, keywords: $0.keywords.joined(separator: " "))
+            }
+        } catch {
             throw ClusterError.catalogInvalid(error.localizedDescription)
         }
-        guard clusters.map(\.id) == Array(0..<clusters.count), !clusters.isEmpty else {
-            throw ClusterError.catalogInvalid("ids must be 0...\(clusters.count - 1) in order")
-        }
-        return clusters
     }
 
-    /// Makes sure `clusters` has the catalog's rows and `cluster_centres` has a centre for each
-    /// of them for `embedder`'s model version. Centres of other model versions are deleted.
+    public static func definitions(_ db: Database) throws -> [ClusterDefinition] {
+        try Row.fetchAll(db, sql: "SELECT id, name, color, keywords FROM clusters ORDER BY id").map {
+            ClusterDefinition(id: $0["id"], name: $0["name"], color: $0["color"], keywords: $0["keywords"])
+        }
+    }
+
+    /// Fills an empty `clusters` table from the bundled seed and makes sure `cluster_centres` has a
+    /// centre for every cluster for `embedder`'s model version; only missing ones are computed.
+    /// Rows the user edited are never overwritten. Centres of other model versions are deleted.
     /// Returns the centres by cluster id.
     @discardableResult
     public static func ensure(database: LibraryDatabase, embedder: any Embedder) async throws -> [Int: [Float]] {
-        let catalog = try catalog()
+        let seed = try seed()
         let version = try await embedder.modelVersion()
-        try await database.writer.write { db in
-            for cluster in catalog {
-                try db.execute(
-                    sql: """
-                        INSERT INTO clusters (id, name, color) VALUES (?, ?, ?)
-                        ON CONFLICT(id) DO UPDATE SET name = excluded.name, color = excluded.color
-                        """, arguments: [cluster.id, cluster.name, cluster.color])
+        let clusters = try await database.writer.write { db -> [ClusterDefinition] in
+            if try Int.fetchOne(db, sql: "SELECT count(*) FROM clusters")! == 0 {
+                for cluster in seed {
+                    try db.execute(
+                        sql: "INSERT INTO clusters (id, name, color, keywords) VALUES (?, ?, ?, ?)",
+                        arguments: [cluster.id, cluster.name, cluster.color, cluster.keywords])
+                }
             }
             try db.execute(sql: "DELETE FROM cluster_centres WHERE model_version != ?", arguments: [version])
+            return try definitions(db)
         }
         var centres = try await database.writer.read { try load($0, modelVersion: version) }
-        for cluster in catalog where centres[cluster.id] == nil {
-            let vector = try await embedder.embed(text: cluster.prompt)
+        for cluster in clusters where centres[cluster.id] == nil {
+            let vector = try await embedder.embed(text: cluster.keywords)
             try await database.writer.write { db in
                 try db.execute(
                     sql: "INSERT OR REPLACE INTO cluster_centres (cluster_id, model_version, vector) VALUES (?, ?, ?)",

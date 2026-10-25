@@ -26,7 +26,7 @@ struct SidebarView: View {
                     Label {
                         Text(cluster.name)
                     } icon: {
-                        Circle().fill(clusterColor(cluster.id)).frame(width: 9, height: 9)
+                        Circle().fill(clusterColor(cluster.id, app.palette)).frame(width: 9, height: 9)
                     }
                     .badge(cluster.count)
                     .tag(SidebarItem.cluster(cluster.id))
@@ -58,8 +58,8 @@ struct SidebarView: View {
     }
 }
 
-func clusterColor(_ id: Int) -> Color {
-    let rgb = ClusterPalette.rgb(forCluster: id)
+func clusterColor(_ id: Int, _ palette: ClusterPalette) -> Color {
+    let rgb = palette.rgb(forCluster: id)
     return Color(red: Double(rgb.red) / 255, green: Double(rgb.green) / 255, blue: Double(rgb.blue) / 255)
 }
 

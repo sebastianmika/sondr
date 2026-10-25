@@ -72,6 +72,8 @@ public final class AppModel {
     public var isScanning: Bool { scanStatus != nil }
     public var isIndexing: Bool { indexProgress != nil }
     public var isRetagging: Bool { retagProgress != nil }
+    /// Cluster colours for the sidebar, the table and the map.
+    public var palette: ClusterPalette { ClusterPalette(clusters) }
 
     // MARK: Startup
 
