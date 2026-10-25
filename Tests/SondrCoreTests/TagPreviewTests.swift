@@ -58,6 +58,17 @@ private let names = [
     #expect(throws: TagRuleError.self) { try preview.rows(global: [TagRule(kind: .regex, pattern: "(")]) }
 }
 
+@Test func previewShowsDefaultIgnoredTagsAsSuchAndNotAsUserRules() async throws {
+    let root = try makeTree(["Kicks/01 Kick 808.wav", "Kicks/02 Kick.wav"])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let preview = try await TagPreview.scan(root: root, tagger: Tagger.bundled())
+    let rows = try preview.rows(global: [TagRule(kind: .text, pattern: "01")])
+    let byTag = Dictionary(uniqueKeysWithValues: rows.map { ($0.tag, $0) })
+    #expect(byTag["01"]?.isDefault == true && byTag["01"]?.blockedBy == nil)
+    #expect(byTag["02"]?.isDefault == true)
+    #expect(byTag["808"]?.isDefault == false && byTag["kick"]?.isDefault == false)
+}
+
 @Test func aCancelledPreviewThrows() async throws {
     let root = try makeTree(names)
     defer { try? FileManager.default.removeItem(at: root) }

@@ -30,8 +30,8 @@ public struct TaggingSettings: Equatable, Codable, Sendable {
 
 /// Computes the auto tags of a path under a set of ``TaggingSettings``.
 ///
-/// Tags are the tagger's output for `<location folder name>/<path below it>`, minus the global and
-/// the location's rules, plus the location's extra tags.
+/// Tags are the tagger's output for `<location folder name>/<path below it>`, minus the built-in default rules,
+/// the global and the location's rules, plus the location's extra tags.
 public struct TagComputer: Sendable {
     private let tagger: Tagger
     private let global: TagRuleSet
@@ -56,7 +56,7 @@ public struct TagComputer: Sendable {
         let rootName = (rootPath as NSString).lastPathComponent
         let own = perLocation[locationID]
         var result = tagger.tags(for: rootName + "/" + relative).filter { tag in
-            !global.blocks(tag) && !(own?.rules.blocks(tag) ?? false)
+            !DefaultTagRules.set.blocks(tag) && !global.blocks(tag) && !(own?.rules.blocks(tag) ?? false)
         }
         if let own { result.formUnion(own.extras) }
         return result

@@ -387,6 +387,30 @@ private final class ProgressLog: @unchecked Sendable {
     #expect(second.contains("drumhaus") && second.contains("snare") && !second.contains("hard"))
 }
 
+@Test func trackNumberTagsNeverReachASampleButExtraAndManualTagsStay() async throws {
+    let tree = try Tree()
+    defer { tree.remove() }
+    try tree.add("kick_short.wav", as: "Drums/01 Kick.wav")
+    let database = try LibraryDatabase(inMemory: ())
+    let scanner = try LibraryScanner(database: database)
+    let extras = LocationTagging(extraTags: ["07"])
+    _ = try await scanner.scan(root: tree.root, tagging: extras)
+    try await database.writer.write { try LibraryTags.add($0, sampleID: 1, name: "02") }
+
+    let tags = try await database.writer.read { try LibraryTags.names($0, sampleID: 1) }
+    #expect(tags.contains("kick") && tags.contains("07") && tags.contains("02"))
+    #expect(!tags.contains("01"))  // the track number
+
+    // A retag that blocks "kick" removes it but keeps the extra tag and the manual tag.
+    let old = try TagComputer(tagger: Tagger.bundled(), settings: TaggingSettings(locations: [1: extras]))
+    let new = try TagComputer(
+        tagger: Tagger.bundled(),
+        settings: TaggingSettings(global: [TagRule(kind: .text, pattern: "kick")], locations: [1: extras]))
+    try await database.writer.write { try TagRetag.retag($0, sampleIDs: [1], old: old, new: new) }
+    let after = try await database.writer.read { try LibraryTags.names($0, sampleID: 1) }
+    #expect(!after.contains("kick") && !after.contains("01") && after.contains("07") && after.contains("02"))
+}
+
 @Test func scanRejectsInvalidRulesBeforeTouchingTheLibrary() async throws {
     let tree = try Tree()
     defer { tree.remove() }
