@@ -14,7 +14,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Verify: a screenshot pair. Decision gate with you: accept system selection, or invest in an `NSTableView` row view (adds roughly one M step to step 5).
    - **Result:** `.tint` alone does not reach the Table (selection stayed system blue, spectrogram too). An `AccentColor` asset (`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`) does: selection is orange in dark and light, white text on it. No custom row view needed. Caveat: macOS only honours the asset while the user's system accent is Multicolor (the default); with a fixed system accent the Table selection follows the system, tinted views stay orange. Snapshot sidebar renders black (translucent material is not captured), so the sidebar is unverified by snapshot.
 
-1. **Tokens and contrast logic in SondrCore** (S)
+1. **Tokens and contrast logic in SondrCore** (S) — DONE
    - `Sources/SondrCore/Theme/ThemeTokens.swift`: the colour table from `DESIGN.md` as RGB pairs (dark, light). `ClusterPalette.RGB`: `contrast(against:)` and `legible(on:minimum:)` (lightness shift, hue kept).
    - Tests: every token pair meets its target (text 4.5, graphics 3); `legible` leaves good colours alone, fixes yellow on light, is idempotent. Adjust token values until green.
    - Verify: `swift test`.
