@@ -5,9 +5,22 @@ import AppKit
 /// `SONDR_OPEN_SETTINGS=1` shows the Settings content in the main window instead
 /// (`SONDR_SETTINGS_TAB` picks the tab); the real Settings window cannot be opened from a script.
 enum SnapshotHook {
+    @MainActor private static func firstTable(in view: NSView) -> NSTableView? {
+        if let table = view as? NSTableView { return table }
+        for sub in view.subviews { if let found = firstTable(in: sub) { return found } }
+        return nil
+    }
+
     @MainActor static func installIfRequested() {
         guard let path = ProcessInfo.processInfo.environment["SONDR_SNAPSHOT"] else { return }
         let delay = Double(ProcessInfo.processInfo.environment["SONDR_SNAPSHOT_DELAY"] ?? "") ?? 4
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay - 1) {
+            // A background window draws its selection grey; activate it and focus the table so the picture shows the real selection.
+            NSApp.activate(ignoringOtherApps: true)
+            let window = NSApp.windows.first(where: { $0.isVisible })
+            window?.makeKeyAndOrderFront(nil)
+            if let root = window?.contentView, let table = firstTable(in: root) { window?.makeFirstResponder(table) }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             let window = NSApp.windows.first(where: { $0.isVisible })
             guard let view = window?.contentView?.superview ?? NSApp.windows.first?.contentView,

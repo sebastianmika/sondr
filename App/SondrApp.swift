@@ -6,6 +6,11 @@ struct SondrApp: App {
     @State private var model = AppModel(computeUnits: Preferences.savedComputeUnits)
 
     init() {
+        switch ProcessInfo.processInfo.environment["SONDR_APPEARANCE"] {
+        case "light": NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
         SnapshotHook.installIfRequested()
     }
 
@@ -22,6 +27,7 @@ struct SondrApp: App {
                 }
             }
             .environment(model)
+            .tint(Color(red: 1, green: 0.353, blue: 0.122))
             .task { await model.start() }
         }
         .defaultSize(width: 1280, height: 780)

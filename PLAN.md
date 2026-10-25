@@ -1,6 +1,6 @@
 # Plan: Signal Grid theme, light/dark/system, app icon
 
-Design: `docs/DESIGN.md`. Findings: `RESEARCH.md`. Status: **awaiting approval**, nothing implemented.
+Design: `docs/DESIGN.md`. Findings: `RESEARCH.md`. Status: approved 2026-10-25, in progress. Step 0 done.
 
 ## Approach
 Theme the native surfaces, do not rebuild controls. One token table (pure data, tested) in `SondrCore`, wrapped into dynamic colours in the app. Appearance is a preference applied through `NSApp.appearance`. Each step below builds, passes `swift test` and a snapshot check in both appearances, then gets its own commit.
@@ -9,9 +9,10 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
 
 ## Steps
 
-0. **Spike: orange selection in the Table** (S)
+0. **Spike: orange selection in the Table** (S) — DONE
    - Throwaway branch/stash. Set `.tint(orange)` at the root, snapshot the sample list selected, dark and light (`SONDR_APPEARANCE` stub or `defaults` + system switch).
    - Verify: a screenshot pair. Decision gate with you: accept system selection, or invest in an `NSTableView` row view (adds roughly one M step to step 5).
+   - **Result:** `.tint` alone does not reach the Table (selection stayed system blue, spectrogram too). An `AccentColor` asset (`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`) does: selection is orange in dark and light, white text on it. No custom row view needed. Caveat: macOS only honours the asset while the user's system accent is Multicolor (the default); with a fixed system accent the Table selection follows the system, tinted views stay orange. Snapshot sidebar renders black (translucent material is not captured), so the sidebar is unverified by snapshot.
 
 1. **Tokens and contrast logic in SondrCore** (S)
    - `Sources/SondrCore/Theme/ThemeTokens.swift`: the colour table from `DESIGN.md` as RGB pairs (dark, light). `ClusterPalette.RGB`: `contrast(against:)` and `legible(on:minimum:)` (lightness shift, hue kept).
