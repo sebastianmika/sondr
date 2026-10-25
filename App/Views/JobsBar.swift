@@ -26,6 +26,17 @@ struct JobsBar: View {
                     Text("\(retag.done.formatted()) of \(retag.total.formatted())").font(.caption2).foregroundStyle(.secondary)
                 }
             }
+            if let recluster = app.reclusterProgress {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sorting into clusters").font(.caption)
+                    ProgressView(value: Double(recluster.done), total: Double(max(recluster.total, 1)))
+                    HStack {
+                        Text("\(recluster.done.formatted()) of \(recluster.total.formatted())").font(.caption2).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Cancel") { app.cancelRecluster() }.controlSize(.small)
+                    }
+                }
+            }
             if let index = app.indexProgress {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Indexing").font(.caption)

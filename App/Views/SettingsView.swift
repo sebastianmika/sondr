@@ -30,8 +30,15 @@ struct SettingsView: View {
             MapSettingsView()
                 .tabItem { Label("Map", systemImage: "map") }
                 .tag("map")
+            ClustersSettingsView()
+                .tabItem { Label("Clusters", systemImage: "circle.grid.3x3") }
+                .tag("clusters")
         }
         .frame(width: 760, height: 700)
+        .onAppear {
+            // The stored tab would otherwise win over the development aid.
+            if let forced = ProcessInfo.processInfo.environment["SONDR_SETTINGS_TAB"] { tab = forced }
+        }
     }
 }
 

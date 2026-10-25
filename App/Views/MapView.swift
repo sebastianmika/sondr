@@ -116,6 +116,7 @@ struct MapCanvasView: View {
         let revision: Int
         let showsPreview: Bool
         let highlight: Int
+        let colours: [String]
         let size: CGSize
         let centreX: Float
         let centreY: Float
@@ -125,7 +126,7 @@ struct MapCanvasView: View {
 
     private var renderKey: RenderKey {
         RenderKey(
-            revision: map?.revision ?? 0, showsPreview: showsPreview, highlight: browse.highlightRevision, size: size,
+            revision: map?.revision ?? 0, showsPreview: showsPreview, highlight: browse.highlightRevision, colours: app.clusters.map(\.color), size: size,
             centreX: effective.centre.x, centreY: effective.centre.y, scale: effective.scale, displayScale: displayScale)
     }
 
