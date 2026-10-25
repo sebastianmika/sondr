@@ -155,7 +155,7 @@ Algorithm (faithful port of the legacy tagger; must reproduce the 200 golden pat
 4. Lower-case → alias → singularise (rule-based singulariser with exceptions, no OS lemmatiser) → alias again.
 5. Drop stopwords and tokens shorter than 2 chars.
 
-The `Tagger` output itself stays as is. On top of it, built-in **default rules** (`DefaultTagRules`, whole-tag regex, case-insensitive) drop tags that are noise: numbers `\d{1,2}\.?` (`01`, `12.`), number pairs `\d+([-._]\d+)+` (`01-02`, `3.5`) and note names `[a-g]#-?\d?`, `[a-g][#b]?-?\d` (`f#`, `c-3`). They stay: `808`, `909`, `120`, `2020`, `am`/`cm`/`dm`, bare `db`/`ab`, `90bpm-chop-bright`, `punchy-02-120`. Applied in `TagComputer.tags`, so scan, retag and location removal all use them.
+The `Tagger` output itself stays as is. A library without saved global rules starts with these **default global rules** (`DefaultTagRules`, whole-tag regex, case-insensitive), listed under Settings → Ignored tags (all locations) like any rule, editable and deletable (deleting all of them stays deleted): numbers `\d{1,2}\.?` (`01`, `12.`), number pairs `\d+([-._]\d+)+` (`01-02`, `3.5`) and note names `[a-g]#-?\d?`, `[a-g][#b]?-?\d` (`f#`, `c-3`). They keep: `808`, `909`, `120`, `2020`, `am`/`cm`/`dm`, bare `db`/`ab`, `90bpm-chop-bright`, `punchy-02-120`. No migration: an existing library keeps whatever it saved.
 
 Bundled data, copied byte-for-byte from the legacy app: `aliases.json`, `stopwords.json` (the old repo's `Sources/SondrCore/Resources/Tagger/`).
 
@@ -171,7 +171,7 @@ Tag provenance: `sample_tags.source` ∈ `auto | manual`.
 
 ### 4.5 Tag preview
 - Walks the folder once (file names only: no hashing, no decoding) and runs the tagger on each relative path. Result: `rawTag → count, example path`. Applying or editing rules is a filter over that dictionary, so the list updates as the user types. Cancellable; spinner "Reading file names…" on big folders.
-- Table columns: Tag (crossed out and grey if blocked) | Files | Example (middle-truncated) | action. Action is **Ignore** (adds a Text rule) or the label "Ignored here" / "Ignored for all" (tooltip names the rule), or "Ignored by default" for tags hidden by the default rules (crossed out, no button). Filter field above the table. Header shows "N audio files". Extra tags are not listed.
+- Table columns: Tag (crossed out and grey if blocked) | Files | Example (middle-truncated) | action. Action is **Ignore** (adds a Text rule) or the label "Ignored here" / "Ignored for all" (tooltip names the rule). Filter field above the table. Header shows "N audio files". Extra tags are not listed.
 - Counts files, not samples (duplicates are only found by the real import).
 
 ### 4.6 Retag

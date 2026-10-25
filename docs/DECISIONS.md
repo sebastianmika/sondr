@@ -13,10 +13,9 @@ REQUIREMENTS §5.1 says Slaney scale and norm. That holds for `clap-htsat-unfuse
 Swift end-to-end embeddings (51 files): min cosine 0.99870 (the 22.05 kHz file, resampler difference), mean 0.99997. Text min 0.9999999.
 
 ## Default tag rules (2026-10-25)
-- Numbers (`01`, `12.`), number pairs (`01-02`) and note names (`f#`, `c-3`) are never tags. Built-in `DefaultTagRules`, applied in `TagComputer.tags` (the one choke point for scan, retag and remove-location); `Tagger` output and its golden test are untouched.
-- Not editable, no migration: existing libraries keep old tags until recreated (owner recreates libraries). Retag diffs would drop them for samples touched by a retag.
-- Side effect: a split `90bpm` yields `90`, which is dropped; the hyphenated `90bpm-chop-bright` stays whole.
-- The preview reads the tagger directly and marks such tags "Ignored by default" instead of hiding them.
+- Numbers (`01`, `12.`), number pairs (`01-02`) and note names (`f#`, `c-3`) are not tags. They are the **initial value of the global "Ignored tags (all locations)" rules** (`DefaultTagRules.rules`): `TaggingStore.load` returns them when `meta.tag_rules` has never been saved, and from then on they are ordinary user rules (owner's request: not an extra hidden layer). Deleting them all saves `[]`, which stays empty.
+- `Tagger` output and its golden test are untouched. No migration: existing libraries keep their saved rules (none saved = defaults on next load; their old tags stay until a retag).
+- Side effect: a split `90bpm` yields `90`, which the number rule drops; the hyphenated `90bpm-chop-bright` stays whole.
 
 ## Multisamples as first-class objects (2026-10-25)
 - Owner suggestion adopted: a group has a name, members and a representative; tags and categories are the union over members, so `sample_groups.cluster_id` and `refreshClusters` are gone. Manual groups survive rebuilds (`manual` flag); editing an automatic group makes it manual.

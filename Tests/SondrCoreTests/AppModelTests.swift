@@ -732,7 +732,7 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     await app.start()
     await app.updateGlobalRules([TagRule(kind: .regex, pattern: "(")])
     #expect(app.message?.contains("regular expression") == true)
-    #expect(app.globalTagRules.isEmpty)
+    #expect(app.globalTagRules == DefaultTagRules.rules)  // nothing was saved, the defaults are still there
 }
 
 @MainActor @Test func aPendingRetagFinishesWhenTheAppStarts() async throws {

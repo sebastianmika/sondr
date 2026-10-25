@@ -16,8 +16,6 @@ public struct TagPreview: Sendable {
         public let example: String
         /// The first rule that hides the tag, if any.
         public let blockedBy: TagRule?
-        /// True if the built-in ``DefaultTagRules`` hide the tag (``blockedBy`` is then `nil`).
-        public let isDefault: Bool
         /// True if ``blockedBy`` is one of the global rules.
         public let isGlobal: Bool
     }
@@ -62,12 +60,11 @@ public struct TagPreview: Sendable {
         let globalSet = try TagRuleSet(global)
         let locationSet = try TagRuleSet(location)
         return raw.map { tag, item in
-            let isDefault = DefaultTagRules.set.blocks(tag)
-            let byGlobal = isDefault ? nil : globalSet.firstMatch(for: tag)
-            let blocker = isDefault ? nil : byGlobal ?? locationSet.firstMatch(for: tag)
+            let byGlobal = globalSet.firstMatch(for: tag)
+            let blocker = byGlobal ?? locationSet.firstMatch(for: tag)
             return Row(
                 tag: tag, count: item.count, example: item.example, blockedBy: blocker,
-                isDefault: isDefault, isGlobal: byGlobal != nil)
+                isGlobal: byGlobal != nil)
         }.sorted { $0.count != $1.count ? $0.count > $1.count : $0.tag < $1.tag }
     }
 

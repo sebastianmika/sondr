@@ -56,7 +56,7 @@ public struct TagComputer: Sendable {
         let rootName = (rootPath as NSString).lastPathComponent
         let own = perLocation[locationID]
         var result = tagger.tags(for: rootName + "/" + relative).filter { tag in
-            !DefaultTagRules.set.blocks(tag) && !global.blocks(tag) && !(own?.rules.blocks(tag) ?? false)
+            !global.blocks(tag) && !(own?.rules.blocks(tag) ?? false)
         }
         if let own { result.formUnion(own.extras) }
         return result
