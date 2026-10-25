@@ -67,7 +67,8 @@ public final class LibraryDatabase: Sendable {
         CREATE TABLE clusters (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            color TEXT
+            color TEXT NOT NULL DEFAULT '#8E8E93',
+            keywords TEXT NOT NULL DEFAULT ''
         );
 
         CREATE TABLE samples (

@@ -321,13 +321,12 @@ private final class AsyncGate: @unchecked Sendable {
     #expect(EmbeddingCodec.decode(Data([1, 2, 3])) == nil)
 }
 
-@Test func indexJobAssignsEveryFinishedSampleToAClusterInTheCatalog() async throws {
+@Test func indexJobAssignsEveryFinishedSampleToAnExistingCluster() async throws {
     let library = try await Library.make(count: 30)
     defer { library.remove() }
     _ = try await IndexJob.start(database: library.database, embedder: StubEmbedder(), chunkSize: 8).result()
 
     #expect(try await library.scalar("SELECT count(*) FROM samples WHERE embed_state = 'done' AND (cluster_id IS NULL OR cluster_score IS NULL)") == 0)
-    #expect(try await library.scalar("SELECT count(*) FROM samples WHERE cluster_id NOT BETWEEN 0 AND 7") == 0)
     #expect(try await library.scalar("SELECT count(*) FROM samples WHERE cluster_id NOT IN (SELECT id FROM clusters)") == 0)
     #expect(try await library.scalar("SELECT count(*) FROM cluster_centres") == 8)
     #expect(try await library.scalar("SELECT count(*) FROM samples WHERE embed_state != 'done' AND cluster_id IS NOT NULL") == 0)

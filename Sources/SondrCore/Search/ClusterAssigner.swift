@@ -10,6 +10,9 @@ public enum ClusterAssigner {
     /// only, see docs/DECISIONS.md (Story 3.3).
     public static let unsortedThreshold: Float = 0.30
 
+    /// Samples per transaction when assigning in bulk.
+    public static let chunkSize = 2048
+
     /// True if a sample's stored score is too weak to show its cluster (or it has none).
     public static func isUnsorted(score: Double?) -> Bool {
         guard let score else { return true }
@@ -50,27 +53,57 @@ public enum ClusterAssigner {
             arguments: [cluster, Double(score), sampleID])
     }
 
+    /// Assigns up to `limit` finished samples with an id above `after` that have no cluster yet.
+    /// Returns how many, and the last id looked at (nil when nothing was left).
+    static func assignChunk(
+        _ db: Database, centres: Centres, after: Int64, limit: Int
+    ) throws -> (count: Int, last: Int64?) {
+        let rows = try Row.fetchAll(
+            db,
+            sql: """
+                SELECT samples.id AS id, vector FROM samples JOIN embeddings ON sample_id = samples.id
+                WHERE embed_state = 'done' AND cluster_id IS NULL AND samples.id > ?
+                ORDER BY samples.id LIMIT ?
+                """, arguments: [after, limit])
+        var count = 0
+        for row in rows {
+            guard let vector = EmbeddingCodec.decode(row["vector"]) else { continue }
+            try assign(db, sampleID: row["id"], vector: vector, centres: centres)
+            count += 1
+        }
+        return (count, rows.last?["id"])
+    }
+
     /// Assigns every finished sample that has no cluster yet. Returns how many.
     @discardableResult
     public static func assignMissing(_ db: Database, centres: Centres) throws -> Int {
         var count = 0
-        var lastID: Int64 = 0
-        // In chunks by id: after a model change every vector is unassigned, and all at once is 250k vectors in memory.
-        while true {
-            let rows = try Row.fetchAll(
-                db,
-                sql: """
-                    SELECT samples.id AS id, vector FROM samples JOIN embeddings ON sample_id = samples.id
-                    WHERE embed_state = 'done' AND cluster_id IS NULL AND samples.id > ?
-                    ORDER BY samples.id LIMIT 2048
-                    """, arguments: [lastID])
-            guard let last = rows.last else { break }
-            lastID = last["id"]
-            for row in rows {
-                guard let vector = EmbeddingCodec.decode(row["vector"]) else { continue }
-                try assign(db, sampleID: row["id"], vector: vector, centres: centres)
-                count += 1
+        var last: Int64? = 0
+        while let after = last {
+            let chunk = try assignChunk(db, centres: centres, after: after, limit: chunkSize)
+            count += chunk.count
+            last = chunk.last
+        }
+        return count
+    }
+
+    /// Like ``assignMissing(_:centres:)`` but one transaction per chunk, so the database is not locked
+    /// for a whole library (250k vectors). Stops early, between chunks, if the task is cancelled.
+    /// - Parameter report: Called after each chunk with the number of samples assigned so far.
+    @discardableResult
+    public static func assignMissing(
+        database: LibraryDatabase, centres: Centres, chunkSize: Int = ClusterAssigner.chunkSize,
+        report: @Sendable (Int) -> Void = { _ in }
+    ) async throws -> Int {
+        var count = 0
+        var last: Int64? = 0
+        while let after = last, !Task.isCancelled {
+            let chunk = try await database.writer.write {
+                try assignChunk($0, centres: centres, after: after, limit: chunkSize)
             }
+            count += chunk.count
+            last = chunk.last
+            if last != nil { report(count) }
         }
         return count
     }

@@ -29,6 +29,8 @@ public final class AppModel {
     public private(set) var scanStatus: ScanStatus?
     /// Set while a change of tag settings is being applied to the samples.
     public private(set) var retagProgress: RetagProgress?
+    /// Set while the samples are assigned to the edited clusters.
+    public private(set) var reclusterProgress: ReclusterProgress?
     /// Blacklist for the tags of all locations.
     public private(set) var globalTagRules: [TagRule] = []
     public private(set) var indexProgress: IndexProgress?
@@ -45,6 +47,7 @@ public final class AppModel {
     /// The 2D map; nil until the library is open.
     public private(set) var map: MapModel?
     private var indexRun: IndexRun?
+    private var reclusterRun: ReclusterRun?
     private let mapSettings: MapSettingsStore
 
     private let databaseURL: URL
@@ -72,6 +75,9 @@ public final class AppModel {
     public var isScanning: Bool { scanStatus != nil }
     public var isIndexing: Bool { indexProgress != nil }
     public var isRetagging: Bool { retagProgress != nil }
+    public var isReclustering: Bool { reclusterProgress != nil }
+    /// Cluster colours for the sidebar, the table and the map.
+    public var palette: ClusterPalette { ClusterPalette(clusters) }
 
     // MARK: Startup
 
@@ -102,6 +108,7 @@ public final class AppModel {
             await mapModel.load()
             await refresh()
             await finishPendingRetag()
+            await finishPendingRecluster()
             startup = .ready
         } catch {
             startup = .failed(error.localizedDescription)
@@ -234,7 +241,7 @@ public final class AppModel {
     }
 
     private func changeTagSettings(_ change: @escaping @Sendable (inout TaggingSettings) -> Void) async {
-        guard let database, !isScanning, !isRetagging else { return }
+        guard let database, !isScanning, !isRetagging, !isReclustering else { return }
         do {
             try await database.writer.write { db in
                 let old = try TaggingStore.load(db)
@@ -261,6 +268,58 @@ public final class AppModel {
             for await progress in run.progress { retagProgress = progress }
             let summary = try await run.result()
             message = summary.cancelled ? "Retagging stopped." : "Retagged \(summary.samples) samples."
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh()
+    }
+
+    // MARK: Clusters
+
+    /// Saves the edited clusters (see ``ClusterReassignJob/commit(_:edited:)``) and, if the centres
+    /// changed, assigns all samples again in the background. Needs the models and no other job.
+    public func saveClusters(_ edited: [ClusterDefinition]) async {
+        guard let database else { return }
+        guard embedder != nil else {
+            message = "The Core ML models were not found. See the README for how to build them."
+            return
+        }
+        guard !isScanning, !isIndexing, !isRetagging, !isReclustering else {
+            message = "Wait for the running job to finish before changing the clusters."
+            return
+        }
+        do {
+            let needsReassign = try await database.writer.write { try ClusterReassignJob.commit($0, edited: edited) }
+            if !needsReassign {
+                message = "Clusters saved."
+                await refresh()
+            }
+        } catch {
+            message = error.localizedDescription
+            return
+        }
+        await finishPendingRecluster()
+    }
+
+    /// Stops the assignment after the chunk in flight; it resumes at the next launch.
+    public func cancelRecluster() { reclusterRun?.cancel() }
+
+    /// Applies a committed but unfinished change of the clusters (also after the app was quit).
+    private func finishPendingRecluster() async {
+        guard let database, let embedder, !isReclustering,
+            (try? await database.writer.read { try ClusterReassignJob.hasPending($0) }) == true
+        else { return }
+        reclusterProgress = ReclusterProgress(total: 0, done: 0)
+        defer {
+            reclusterProgress = nil
+            reclusterRun = nil
+        }
+        do {
+            let run = try ClusterReassignJob.start(database: database, embedder: embedder)
+            reclusterRun = run
+            for await progress in run.progress { reclusterProgress = progress }
+            let summary = try await run.result()
+            message = summary.cancelled ? "Sorting into clusters stopped." : "Sorted \(summary.samples) samples into clusters."
         } catch {
             message = error.localizedDescription
         }

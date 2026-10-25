@@ -4,7 +4,7 @@ import Testing
 
 @testable import SondrCore
 
-private final class TextStub: Embedder, @unchecked Sendable {
+final class TextStub: Embedder, @unchecked Sendable {
     private let lock = NSLock()
     private var _prompts: [String] = []
     let version: String
@@ -24,22 +24,23 @@ private final class TextStub: Embedder, @unchecked Sendable {
     }
 }
 
-@Test func catalogHasEightZeroBasedClusters() throws {
-    let catalog = try ClusterCentres.catalog()
-    #expect(catalog.map(\.id) == Array(0..<8))
-    #expect(catalog.map(\.name) == ["kicks", "snares", "hats/perc", "bass", "pads", "leads", "vox chops", "fx/risers"])
+@Test func seedHasEightZeroBasedClusters() throws {
+    let seed = try ClusterCentres.seed()
+    #expect(seed.map(\.id) == Array(0..<8))
+    #expect(seed.map(\.name) == ["kicks", "snares", "hats/perc", "bass", "pads", "leads", "vox chops", "fx/risers"])
+    #expect(seed.allSatisfy { ClusterPalette.RGB(hex: $0.color) != nil })
 }
 
 @Test func keywordBagsOfBassPadsAndLeadsDoNotStartWithDrums() throws {
-    let catalog = try ClusterCentres.catalog()
+    let seed = try ClusterCentres.seed()
     for name in ["bass", "pads", "leads"] {
-        let bag = try #require(catalog.first { $0.name == name }).keywords
-        #expect(!bag.contains("drums"), "\(name) bag has 'drums' (legacy bug)")
+        let bag = try #require(seed.first { $0.name == name }).keywords
+        #expect(!bag.hasPrefix("drums"), "\(name) bag has 'drums' (legacy bug)")
     }
-    #expect(catalog[0].prompt == "drums kick deep boom thump")
+    #expect(seed[0].keywords == "drums kick deep boom thump")
 }
 
-@Test func ensureCreatesClustersAndOneCentrePerCluster() async throws {
+@Test func ensureSeedsAnEmptyTableAndComputesOneCentrePerCluster() async throws {
     let database = try LibraryDatabase(inMemory: ())
     let embedder = TextStub()
     let centres = try await ClusterCentres.ensure(database: database, embedder: embedder)
@@ -50,6 +51,19 @@ private final class TextStub: Embedder, @unchecked Sendable {
     let stored = try await database.writer.read { try ClusterCentres.load($0, modelVersion: "stub-1") }
     #expect(stored == centres)
     #expect(embedder.prompts.count == 8)
+}
+
+@Test func ensureNeverOverwritesOrReseedsUserRows() async throws {
+    let database = try LibraryDatabase(inMemory: ())
+    try await database.writer.write {
+        try $0.execute(sql: "INSERT INTO clusters (id, name, color, keywords) VALUES (5, 'mine', '#112233', 'foo bar')")
+    }
+    let embedder = TextStub()
+    let centres = try await ClusterCentres.ensure(database: database, embedder: embedder)
+    #expect(Set(centres.keys) == [5])
+    #expect(embedder.prompts == ["foo bar"])
+    let rows = try await database.writer.read { try ClusterCentres.definitions($0) }
+    #expect(rows == [ClusterDefinition(id: 5, name: "mine", color: "#112233", keywords: "foo bar")])
 }
 
 @Test func centresAreComputedOncePerModelVersion() async throws {
@@ -76,7 +90,7 @@ private final class TextStub: Embedder, @unchecked Sendable {
     #expect(embedder.prompts.count == 9)
 }
 
-@Test func clusterReferencesOutsideTheCatalogAreRejectedByTheDatabase() async throws {
+@Test func centresOfUnknownClustersAreRejectedByTheDatabase() async throws {
     let database = try LibraryDatabase(inMemory: ())
     _ = try await ClusterCentres.ensure(database: database, embedder: TextStub())
     await #expect(throws: DatabaseError.self) {

@@ -12,7 +12,7 @@ func clustersOfClearlyLabelledFixturesAreRight() async throws {
     let service = EmbeddingService(modelsDirectory: modelsDirectory, computeUnits: .cpuAndGPU)
     let database = try LibraryDatabase(inMemory: ())
     let centres = ClusterAssigner.Centres(try await ClusterCentres.ensure(database: database, embedder: service))
-    let names = try ClusterCentres.catalog().map(\.name)
+    let names = try ClusterCentres.seed().map(\.name)
     // With the fused model the old synthetic-fixture scores dropped (see DECISIONS.md, cluster threshold): these hold.
     let expected = [
         "kick_short.wav": "kicks", "kick_long_tail.wav": "kicks", "bass_sub.wav": "bass", "bass.caf": "bass",

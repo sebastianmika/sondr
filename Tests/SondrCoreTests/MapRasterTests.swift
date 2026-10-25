@@ -6,28 +6,33 @@ import simd
 
 // MARK: Palette
 
-@Test func everyClusterHasItsOwnColourAndUnsortedIsGrey() {
-    let colours = (0..<8).map { ClusterPalette.rgb(forCluster: $0) }
-    for i in colours.indices {
-        for j in colours.indices where j > i {
-            let a = colours[i], b = colours[j]
+/// What the app builds from the seeded clusters table.
+private let palette = ClusterPalette(
+    hex: Dictionary(uniqueKeysWithValues: try! ClusterCentres.seed().map { ($0.id, $0.color) }))
+private let colours = palette.denseTable
+
+@Test func everySeededClusterHasItsOwnColourAndUnsortedIsGrey() {
+    let own = (0..<8).map { palette.rgb(forCluster: $0) }
+    for i in own.indices {
+        for j in own.indices where j > i {
+            let a = own[i], b = own[j]
             let distance = (pow(Double(a.red) - Double(b.red), 2) + pow(Double(a.green) - Double(b.green), 2)
                 + pow(Double(a.blue) - Double(b.blue), 2)).squareRoot()
             #expect(distance > 70, "clusters \(i) and \(j) look alike")
         }
     }
-    let unsorted = ClusterPalette.rgb(forCluster: -1)
+    let unsorted = palette.rgb(forCluster: -1)
     #expect(unsorted.red == unsorted.green && abs(Int(unsorted.green) - Int(unsorted.blue)) < 12, "greyish")
-    #expect(!colours.contains { $0.red == unsorted.red && $0.green == unsorted.green && $0.blue == unsorted.blue })
+    #expect(!own.contains(unsorted))
 }
 
-@Test func clusterIDsBeyondTheCatalogWrapAround() {
-    #expect(ClusterPalette.rgb(forCluster: 9) == ClusterPalette.rgb(forCluster: 1))
-}
-
-@Test func theCatalogNamesDistinctColours() throws {
-    let colours = try ClusterCentres.catalog().map(\.color)
-    #expect(Set(colours).count == colours.count)
+@Test func clusterIDsBeyondTheTableDrawAsUnsorted() {
+    let buffer = MapRaster.render(
+        MapDots(ids: [1], x: [0], y: [0], cluster: [50], fitted: [true]), colours: colours,
+        viewport: MapViewport(centre: SIMD2(0, 0), scale: 10), width: 40, height: 40, highlight: nil, radius: 1)
+    let i = (20 * 40 + 20) * 4
+    let grey = ClusterPalette.unsorted
+    #expect(abs(Int(buffer[i]) - Int(Double(grey.red) * Double(buffer[i + 3]) / 255)) <= 2)
 }
 
 // MARK: Viewport
@@ -103,9 +108,9 @@ private func pixel(_ buffer: [UInt8], _ x: Int, _ y: Int, width: Int) -> (r: UIn
 private let unit = MapViewport(centre: SIMD2(0, 0), scale: 10)
 
 @Test func aDotIsDrawnInItsClusterColourWhereTheViewportPutsIt() {
-    let buffer = MapRaster.render(dots([(0, 0, 3)]), viewport: unit, width: 400, height: 300, highlight: nil, radius: 1)
+    let buffer = MapRaster.render(dots([(0, 0, 3)]), colours: colours, viewport: unit, width: 400, height: 300, highlight: nil, radius: 1)
     #expect(buffer.count == 400 * 300 * 4)
-    let colour = ClusterPalette.rgb(forCluster: 3)
+    let colour = palette.rgb(forCluster: 3)
     let p = pixel(buffer, 200, 150, width: 400)
     #expect(p.a > 150)
     // premultiplied: the colour channels are the colour times alpha
@@ -115,31 +120,31 @@ private let unit = MapViewport(centre: SIMD2(0, 0), scale: 10)
 }
 
 @Test func dotsOutsideTheViewAreSkipped() {
-    let buffer = MapRaster.render(dots([(1000, 1000, 0), (-1000, 5, 1)]), viewport: unit, width: 100, height: 100, highlight: nil, radius: 2)
+    let buffer = MapRaster.render(dots([(1000, 1000, 0), (-1000, 5, 1)]), colours: colours, viewport: unit, width: 100, height: 100, highlight: nil, radius: 2)
     #expect(buffer.allSatisfy { $0 == 0 })
 }
 
 @Test func unsortedDotsAreGrey() {
-    let buffer = MapRaster.render(dots([(0, 0, -1)]), viewport: unit, width: 40, height: 40, highlight: nil, radius: 1)
+    let buffer = MapRaster.render(dots([(0, 0, -1)]), colours: colours, viewport: unit, width: 40, height: 40, highlight: nil, radius: 1)
     let p = pixel(buffer, 20, 20, width: 40)
     #expect(p.a > 0 && abs(Int(p.r) - Int(p.g)) <= 4 && abs(Int(p.g) - Int(p.b)) <= 12)
 }
 
 @Test func withAHighlightEverythingElseFadesOut() {
     let data = dots([(-5, 0, 0), (5, 0, 0)], ids: [10, 20])
-    let buffer = MapRaster.render(data, viewport: unit, width: 400, height: 300, highlight: [20], radius: 1)
+    let buffer = MapRaster.render(data, colours: colours, viewport: unit, width: 400, height: 300, highlight: [20], radius: 1)
     let faded = pixel(buffer, 150, 150, width: 400), shown = pixel(buffer, 250, 150, width: 400)
     #expect(faded.a > 0 && shown.a > faded.a * 3, "faded \(faded.a) shown \(shown.a)")
 }
 
 @Test func anEmptyHighlightFadesEverything() {
-    let buffer = MapRaster.render(dots([(0, 0, 0)]), viewport: unit, width: 40, height: 40, highlight: [], radius: 1)
+    let buffer = MapRaster.render(dots([(0, 0, 0)]), colours: colours, viewport: unit, width: 40, height: 40, highlight: [], radius: 1)
     #expect(pixel(buffer, 20, 20, width: 40).a < 80)
 }
 
 @Test func overlappingDotsAddUpWithoutOverflowing() {
     let many = dots((0..<500).map { _ in (0, 0, 2) })
-    let buffer = MapRaster.render(many, viewport: unit, width: 40, height: 40, highlight: nil, radius: 1)
+    let buffer = MapRaster.render(many, colours: colours, viewport: unit, width: 40, height: 40, highlight: nil, radius: 1)
     let p = pixel(buffer, 20, 20, width: 40)
     #expect(p.a == 255 || p.a >= 250)
     #expect(p.r <= p.a && p.g <= p.a && p.b <= p.a, "stays a valid premultiplied colour")
@@ -147,7 +152,7 @@ private let unit = MapViewport(centre: SIMD2(0, 0), scale: 10)
 
 @Test func aBiggerRadiusPaintsMorePixels() {
     func painted(_ radius: Float) -> Int {
-        let b = MapRaster.render(dots([(0, 0, 0)]), viewport: unit, width: 60, height: 60, highlight: nil, radius: radius)
+        let b = MapRaster.render(dots([(0, 0, 0)]), colours: colours, viewport: unit, width: 60, height: 60, highlight: nil, radius: radius)
         return stride(from: 3, to: b.count, by: 4).filter { b[$0] > 0 }.count
     }
     #expect(painted(1) >= 1)
@@ -200,9 +205,9 @@ func rasterOf250kDotsIsFast() {
     let viewport = MapViewport.fitting(x: data.x, y: data.y, size: SIMD2(2400, 1600))
     let clock = ContinuousClock()
     var buffer: [UInt8] = []
-    let draw = clock.measure { buffer = MapRaster.render(data, viewport: viewport, width: 2400, height: 1600, highlight: nil, radius: nil) }
+    let draw = clock.measure { buffer = MapRaster.render(data, colours: colours, viewport: viewport, width: 2400, height: 1600, highlight: nil, radius: nil) }
     let highlight = Set((0..<20_000).map(Int64.init))
-    let drawHighlight = clock.measure { buffer = MapRaster.render(data, viewport: viewport, width: 2400, height: 1600, highlight: highlight, radius: nil) }
+    let drawHighlight = clock.measure { buffer = MapRaster.render(data, colours: colours, viewport: viewport, width: 2400, height: 1600, highlight: highlight, radius: nil) }
     let hit = clock.measure { _ = MapRaster.nearest(in: data, to: SIMD2(1200, 800), viewport: viewport, size: SIMD2(2400, 1600), maxDistance: 10) }
     print("raster 250k at 2400x1600: \(draw), with a 20k highlight: \(drawHighlight), hit test: \(hit); \(buffer.count) bytes")
 }

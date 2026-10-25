@@ -67,17 +67,18 @@ public enum MapRaster {
     }
 
     /// - Parameters:
+    ///   - colours: Dense table by `cluster + 1` (see ``ClusterPalette/denseTable``); ids beyond it draw as `colours[0]`.
     ///   - highlight: If set, only these samples are drawn at full strength; the rest fades.
     ///   - radius: Dot size in pixels; nil picks one from the number of dots.
     /// - Returns: `width * height * 4` bytes, RGBA, premultiplied alpha, row 0 at the top.
     public static func render(
-        _ dots: MapDots, viewport: MapViewport, width: Int, height: Int, highlight: Set<Int64>?, radius: Float?
+        _ dots: MapDots, colours: [ClusterPalette.RGB], viewport: MapViewport, width: Int, height: Int,
+        highlight: Set<Int64>?, radius: Float?
     ) -> [UInt8] {
         var buffer = [UInt8](repeating: 0, count: max(width, 0) * max(height, 0) * 4)
-        guard width > 0, height > 0, dots.count > 0 else { return buffer }
+        guard width > 0, height > 0, dots.count > 0, !colours.isEmpty else { return buffer }
         let size = SIMD2(Float(width), Float(height))
         let half = max(0, Int(((radius ?? defaultRadius(count: dots.count, width: width, height: height)) - 0.5).rounded(.down)))
-        let colours = (0...8).map { ClusterPalette.rgb(forCluster: $0 - 1) }
         let origin = size / 2 - viewport.centre * viewport.scale
 
         buffer.withUnsafeMutableBufferPointer { pixels in
@@ -85,7 +86,8 @@ public enum MapRaster {
                 let px = Int((origin.x + dots.x[index] * viewport.scale).rounded(.down))
                 let py = Int((origin.y + dots.y[index] * viewport.scale).rounded(.down))
                 guard px + half >= 0, px - half < width, py + half >= 0, py - half < height else { return }
-                let colour = colours[min(max(dots.cluster[index] + 1, 0), colours.count - 1)]
+                let slot = dots.cluster[index] + 1
+                let colour = colours.indices.contains(slot) ? colours[slot] : colours[0]
                 let r = UInt32(colour.red) * alpha / 255, g = UInt32(colour.green) * alpha / 255, b = UInt32(colour.blue) * alpha / 255
                 let keep = 255 - alpha
                 for y in max(py - half, 0)...min(py + half, height - 1) {

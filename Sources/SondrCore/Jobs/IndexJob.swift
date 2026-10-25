@@ -118,10 +118,7 @@ public enum IndexJob {
         _ = try await Reconciliation.run(database: database)
 
         let centres = ClusterAssigner.Centres(try await ClusterCentres.ensure(database: database, embedder: embedder))
-        _ = try await database.writer.write {
-            try ClusterAssigner.assignMissing($0, centres: centres)
-            try MultisampleGrouper.refreshClusters($0)
-        }
+        try await ClusterAssigner.assignMissing(database: database, centres: centres)
 
         var progress = IndexProgress(
             total: try await database.writer.read {

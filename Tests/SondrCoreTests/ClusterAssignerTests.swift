@@ -17,6 +17,36 @@ private func orthogonalCentres() -> ClusterAssigner.Centres {
     ClusterAssigner.Centres(Dictionary(uniqueKeysWithValues: (0..<8).map { ($0, axis($0, scale: 3)) }))
 }
 
+private final class Reports: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _values: [Int] = []
+    var values: [Int] { lock.withLock { _values } }
+    func add(_ value: Int) { lock.withLock { _values.append(value) } }
+}
+
+@Test func chunkedAssignMissingUsesOneTransactionPerChunkAndReportsProgress() async throws {
+    let database = try LibraryDatabase(inMemory: ())
+    let vector = EmbeddingCodec.encode(axis(4))
+    try await database.writer.write { db in
+        for k in 0..<8 { try db.execute(sql: "INSERT INTO clusters (id, name) VALUES (?, 'c')", arguments: [k]) }
+        for i in 0..<10 {
+            try db.execute(
+                sql: """
+                    INSERT INTO samples (content_hash, canonical_path, filename, rel_path, duration,
+                        sample_rate, channels, format, file_size, file_mtime, scanned_at, embed_state)
+                    VALUES (?, '/a.wav', 'a.wav', 'a.wav', 1, 48000, 1, 'wav', 1, 0, 0, 'done')
+                    """, arguments: ["h\(i)"])
+            try db.execute(sql: "INSERT INTO embeddings (sample_id, vector) VALUES (?, ?)", arguments: [db.lastInsertedRowID, vector])
+        }
+    }
+    let reports = Reports()
+    let assigned = try await ClusterAssigner.assignMissing(
+        database: database, centres: orthogonalCentres(), chunkSize: 4, report: { reports.add($0) })
+    #expect(assigned == 10)
+    #expect(reports.values == [4, 8, 10])
+    #expect(try await database.writer.read { try Int.fetchOne($0, sql: "SELECT count(*) FROM samples WHERE cluster_id = 4") } == 10)
+}
+
 @Test func everyClusterIdCanBeAssigned() {
     let centres = orthogonalCentres()
     for k in 0..<8 {

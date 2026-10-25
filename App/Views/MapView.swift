@@ -147,8 +147,9 @@ struct MapCanvasView: View {
         let width = Int(size.width * displayScale), height = Int(size.height * displayScale)
         let scaled = MapViewport(centre: effective.centre, scale: effective.scale * ratio)
         let highlight = showsPreview ? nil : browse.highlight
+        let colours = app.palette.denseTable
         let bytes = await Task.detached(priority: .userInitiated) {
-            MapRaster.render(dots, viewport: scaled, width: width, height: height, highlight: highlight, radius: nil)
+            MapRaster.render(dots, colours: colours, viewport: scaled, width: width, height: height, highlight: highlight, radius: nil)
         }.value
         guard !Task.isCancelled, let provider = CGDataProvider(data: Data(bytes) as CFData) else { return }
         image = CGImage(
