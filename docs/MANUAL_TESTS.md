@@ -42,3 +42,10 @@ Desired behaviour: if grouping is selected, multisamples where any included samp
 
 ## Suggestion Multisamples
 Multisamples become be first class objects. They hold a name (default = file stem of one sample) and a list of samples they contain. Categories and tags are the union over the included samples. The representative is just one specific sample of the collection, default=median pitch
+
+## Re-test after the change round
+- **Drag-out**: Finder copy keeps the original file name; DAW path is the original path (not `~/Library/Caches/com.apple.SwiftUI.Drag-…`); many rows; Cmd-move still rejected.
+- **Grouping bug**: map area → grouping off → on shows one row per group; expand a group: all members listed, non-matching dimmed.
+- **Group editor**: Locations → Multisamples… : create, rename, add samples, remove member, make representative, ungroup; manual group survives Rescan and Index.
+- **Tag defaults**: Location editor preview shows `01`, `02-120`, `f#`, `c-3` crossed out as "Ignored by default"; `808`, `909`, `am` stay. Note: `90bpm` loses the bare `90`.
+- **Clusters tab**: change colour (instant, sidebar/table/map recolour); change a description or add a cluster and Apply (progress row "Sorting into clusters", Cancel, quit and relaunch resumes); delete a cluster; last cluster cannot be deleted.

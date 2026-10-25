@@ -17,7 +17,7 @@ A desktop app to manage and search a library of **50k to 250k audio samples** (d
 
 It lets the user:
 - search by describing a sound in words ("warm analog pad") or by example ("find similar");
-- see every sample sorted into 8 sound categories;
+- see every sample sorted into sound categories (8 by default, user-editable);
 - narrow the list by six audio features (sound axes) or by an area on a 2D map of the library;
 - filter and curate tags, derived from folder and file names;
 - play samples, and drag them into Finder or a DAW;
@@ -46,7 +46,7 @@ It lets the user:
 | Python tooling | `uv`-managed. `tools/convert_clap` (model conversion + parity validation), `tools/golden` (fixture generation). Python is never needed at runtime. |
 | Concurrency | Actors for scanner, embedder, vector index, map service. One running job per kind, enforced by a registry; a second start fails at once with a typed error. |
 
-**Job exclusion matrix.** Scan and index may run together. Retag excludes scan (it holds both job kinds). Scan, add/remove location and rescan are disabled in the UI while indexing or retagging. A scan refuses to run while indexing or retagging.
+**Job exclusion matrix.** Scan and index may run together. Retag excludes scan (it holds both job kinds). The cluster re-sort (§5.5) holds scan, index, retag and recluster, so it excludes all of them and they exclude it. Scan, add/remove location and rescan are disabled in the UI while indexing or retagging. A scan refuses to run while indexing or retagging.
 
 ---
 
@@ -80,7 +80,7 @@ Settings is a separate window (⌘,), 760 x 700, tabs **General · Locations · 
 
 ### 3.2 Sidebar
 - **Library**: "All samples" (count = samples minus missing), "Unsorted" (count). Single selection; selecting one sets the cluster filter.
-- **Clusters**: the 8 categories, each with a colour dot (palette in §6.6) and sample count. Selecting one sets the cluster filter.
+- **Clusters**: the user's categories (8 by default), each with a colour dot (palette in §6.6) and sample count. Selecting one sets the cluster filter.
 - **Tags**: shown only when tags exist. A wrapping cloud of chips `name count`, most used first (limit 200). Click toggles the tag in the filter (active chip is accent-filled). Below it a **Manage Tags…** button.
 - **Jobs bar** (pinned bottom, material background):
   - scan progress (`Scanning <folder>…`, bar, "x of y files", indeterminate until the file count is known);
@@ -196,7 +196,7 @@ Work list: `embed_state = 'pending' AND missing = 0`, in id order. States: `pend
 - Core ML compiles packages on first use and caches the result in `~/Library/Caches/Sondr/CompiledModels`, keyed by version + package mtime.
 - **Compute units** (Settings): *GPU and CPU* (default, fastest: 256 emb/s), *All incl. Neural Engine* (211), *CPU only* (140). Applied at next start. The Neural Engine does not help.
 - **Conversion patches** that were needed (keep, or find equivalents): bicubic time-axis resize replaced by a fixed matrix; `AdaptiveAvgPool1d(1)` → `mean`; Swin window partition/reverse with rank ≤ 5 reshapes; text attention mask `-1e4` not `finfo.min`. Pin `torch==2.7.0` for `coremltools` 9.0.
-- **Audio preprocessing in Swift** (Accelerate, math in Double): mono → 48 kHz → first **10 s** window (model's native window; legacy 7 s was wrong) → zero-pad to ≥ 1 s → peak-normalise to [-1, 1]; then the HF `ClapFeatureExtractor` log-mel: **Slaney** mel scale and norm (not HTK), FFT output rounded to float32 before power, `repeatpad` for short clips, 1001 x 64 features. Must match HF with max abs diff 0.0 dB on the 5 mel fixtures. Longer audio is cut to its first 10 s (HF crops randomly; not reproducible).
+- **Audio preprocessing in Swift** (Accelerate, math in Double): mono → 48 kHz → first **10 s** window (model's native window; legacy 7 s was wrong) → zero-pad to ≥ 1 s → peak-normalise to [-1, 1]; then the HF `ClapFeatureExtractor` log-mel: **HTK** mel scale, no norm for `clap-htsat-fused` (`truncation: fusion`; Slaney only for the unfused model; see `docs/DECISIONS.md`), FFT output rounded to float32 before power, `repeatpad` for short clips, 1001 x 64 features. Must match HF with max abs diff 0.0 dB on the 5 mel fixtures. Longer audio is cut to its first 10 s (HF crops randomly; not reproducible).
 - **Decoding.** `AVAudioFile` → channel average → `AVAudioConverter` to 48 kHz (Mastering algorithm, max quality). Resampled length = `ceil(n * (48000 / rate))` in that order of operations. MP3: read the LAME/Xing tag and drop exactly `delay` samples at the start and `padding` at the end (Apple's decoder already removes the 529-sample decoder delay); files without a LAME tag are left as decoded. Typed `AudioLoadError` for undecodable files; no files are written.
 - **Tokenizer.** Own byte-level BPE (RoBERTa vocab) from `vocab.json` + `merges.txt` (HF snapshot `8fa0f1c6`, 1.2 MB), ~170 lines, no dependency. Ids identical to HF on all 27 golden queries (empty, whitespace, punctuation, emoji, accents, tabs, 700-word input). Truncation: 510 content tokens + `<s>` + `</s>` = 512. Literal special tokens in input are tokenised as HF does.
 - **`Embedder` protocol** (model version, audio batch, text) so tests use a stub.
@@ -230,8 +230,9 @@ STFT: 1024 FFT, hop 512, symmetric Hann, no centre padding. Matches the legacy v
 - **Spectrogram**: 64 columns (time) x 32 log-spaced bands (50 Hz–14 kHz), one byte per cell = dB relative to the loudest cell mapped from −70..0 dB; 2 KiB/sample; own 1024-point Float STFT (not the model's mel). Loaded for the one selected sample only, never part of list rows.
 
 ### 5.5 Clusters
-- Eight fixed categories, ids **0–7 everywhere** (`kicks, snares, hats/perc, bass, pads, leads, vox chops, fx/risers`), each with a keyword bag in `Resources/Clusters/clusters.json`. Bags for kicks/snares/hats-perc start with "drums"; bass/pads/leads must **not**.
-- Centre = CLAP *text* embedding of the bag joined by spaces, Float32, computed once per model version and cached in `cluster_centres` (other versions deleted).
+- Clusters are **data, edited by the user** in Settings → Clusters: name, colour (`#RRGGBB`), description (keywords), add, delete (at least one must remain). `Resources/Clusters/clusters.json` only seeds an empty `clusters` table with the default eight (`kicks, snares, hats/perc, bass, pads, leads, vox chops, fx/risers`; bags for kicks/snares/hats-perc start with "drums"; bass/pads/leads must **not**). Ids are never reused; nothing assumes eight or contiguous ids.
+- Centre = CLAP *text* embedding of the description joined by spaces, Float32, cached in `cluster_centres` per model version (other versions deleted). Editing a description or deleting a cluster drops that centre.
+- **Applying edits.** Rename/recolour is instant. A changed description, an added or a deleted cluster starts the background `ClusterReassignJob`: one transaction saves the edits and nulls all cluster ids and scores, centres are recomputed for missing ones, then samples are re-sorted from the stored vectors in transactions of 2048 rows (no decoding). Resumable at next launch (`meta.recluster_pending`), cancellable, needs the models. The global `unsortedThreshold` is not part of the editor.
 - Assignment: nearest centre by cosine; **always store** cluster id and cosine as `cluster_score`. Assigned in the same transaction as the embedding; missing ones back-filled in chunks of 2048.
 - **"Unsorted" is a read-time decision**: score < `unsortedThreshold` (**0.30, provisional**) or no cluster. Changing the threshold needs no re-index. Cluster filter `.cluster(n)` requires score ≥ threshold; `.unsorted` = no cluster or weak score.
 - Test: eight clearly labelled fixtures land in the expected cluster above the threshold.
@@ -260,7 +261,7 @@ Context menu (single selection) and detail pane button. Top 100 neighbours of th
 Actor holding one contiguous Float32 buffer (N x 512) plus a parallel id array; loaded from SQLite at start and after scan/index (0.1 s per 100k). Only `done`, non-missing samples. Top-k = `cblas_sgemv` + sorted insertion buffer. `remove` swaps the last row into the gap (row order not stable; nothing outside may depend on it). Cosine = dot product (stored vectors unit length; queries normalised on entry). Allowed-set filtering during selection. **Target: top-50 over 250k x 512 in < 50 ms (measured 2.8 ms).** ~512 MB RAM at 250k.
 
 ### 6.6 Cluster colours
-Eight clearly different hues, one per id, shared by sidebar, table and map. Unsorted = grey. (Legacy reused five names for eight clusters.)
+One colour per cluster, stored with the cluster (default: eight clearly different hues; new clusters get a golden-angle hue), shared by sidebar, table and map. Unsorted = grey.
 
 ### 6.7 Result vs list semantics
 - Any change to filter/sort/library reloads page 1; search results are searched again with the new filter.
@@ -299,11 +300,12 @@ Accepted **number** groups take their pitches from the files' root notes when ev
 Read from header chunks: WAV `smpl` (MIDIUnityNote), then `acid` (root note, only when the flag bit 0x02 is set), then `inst` (unshifted note); AIFF/AIFC `INST` baseNote. Only 0–127. At most 64 chunks are walked; stop at the first chunk id that is not printable ASCII (damaged files). `pitchNumbers` = all note numbers a WAV mentions (smpl, acid, inst root + low + high).
 
 ### 7.6 Storage and list behaviour
-- Table `sample_groups(id, location_id, folder, key, representative_id, cluster_id)` unique on (location, folder, key). `samples.group_id, pitch (MIDI, C4=60), pitch_label`.
-- A regroup run **replaces all groups of one location** and is repeatable at any time. It runs after scan, after indexing, after a rules edit, and (for all locations) via `regroup()`.
+- Table `sample_groups(id, location_id, folder, key, name, manual, representative_id)` unique on (location, folder, key). A multisample is a **first-class object**: it has a name (default: the representative's file stem), a member list and a representative. Manual groups use `folder = ''` and `key = 'manual:<uuid>'`. `samples.group_id, pitch (MIDI, C4=60), pitch_label`.
+- A regroup run **replaces all automatic groups of one location** and keeps `manual` groups and their members (empty manual groups are deleted); it is repeatable at any time. Any user edit (create, rename, ungroup, add/remove members, set representative) marks the group manual, also an edited automatic one.
+- **Editing** happens in the location sheet only (Multisamples… on the location row, Review Multisamples… in Edit mode): rename, ungroup, remove member, add samples from the location's ungrouped samples, make representative, new group from selected samples. A sample moves out of its old group when added elsewhere. It runs after scan, after indexing, after a rules edit, and (for all locations) via `regroup()`.
 - **Representative** = first member (path order) at the **median distinct pitch**.
-- **Group cluster** = most common *sorted* cluster (score ≥ threshold) among members; ties → lower id; none sorted → none. Refreshed after cluster assignment and after regrouping.
-- **Collapsed mode** (toolbar toggle, on by default, persisted): one row per group, the representative, or the first member by pitch that matches the filter when the representative does not. `total` counts those rows. Sorting uses the shown row. With groups collapsed, the cluster filter and the Cluster column use the **group's** cluster, and "unsorted" means a group without a cluster. Groups collapse **only** in plain browse, not in text-search or similar results.
+- **Tags and categories of a group are the union over its members** (no stored group cluster). A group shows its distinct member tags and one colour dot per distinct sorted member cluster.
+- **Collapsed mode** (toolbar toggle, on by default, persisted): one row per group, the representative, or the first member by pitch that matches the filter when the representative does not. `total` counts those rows. Sorting uses the shown row. A group shows when **any member** matches the active filters, keyword, cluster, axes brush or map area; the cluster filter matches a group if any member matches. Expanded, a group lists **all** its members, matching ones normal and non-matching ones dimmed. With grouping off only matching samples show. Name and name sort use the group name. Groups collapse **only** in plain browse, not in text-search or similar results.
 - **Row UI** (group of more than one member): badge `N pitches LOW–HIGH` (e.g. `24 pitches C1–B2`) next to the name; a disclosure triangle expands to the **other** members (the group row is itself a member, so children omit it), in pitch order, each labelled with its note. Expansion state is reset on every first-page reload. `showsGroups` changes together with the rows so toggling never draws old rows in the new mode **(unverified; if it persists, key the Table on `showsGroups`)**.
 - Keyboard stepping, scrolling, context menu and drag work over expanded members.
 - Members of a group are always fetched whole (`members(groupID)`), whatever the filter.
@@ -429,13 +431,13 @@ samples(id, content_hash UNIQUE, canonical_path, filename, name, rel_path,
         group_id→sample_groups SET NULL, pitch, pitch_label,
         file_size, file_mtime, scanned_at)
 sample_paths(id, sample_id→samples CASCADE, path UNIQUE, location_id→locations SET NULL, file_size, file_mtime)
-sample_groups(id, location_id→locations CASCADE, folder, key, representative_id→samples SET NULL,
-              cluster_id→clusters SET NULL, UNIQUE(location_id, folder, key))
+sample_groups(id, location_id→locations CASCADE, folder, key, name, manual, representative_id→samples SET NULL,
+              UNIQUE(location_id, folder, key))
 embeddings(sample_id PK→samples CASCADE, vector BLOB Float16 x512)
 tags(id, name UNIQUE)
 sample_tags(sample_id, tag_id, source CHECK(auto|manual), PK(sample_id, tag_id))
 removed_auto_tags(sample_id, tag_id, PK)            -- sticky user removals
-clusters(id, name, color)
+clusters(id, name, color '#RRGGBB', keywords)
 cluster_centres(cluster_id, model_version, vector BLOB Float32, PK(cluster_id, model_version))
 dim_stats(dim PK, p5, p95)
 maps(...), map_points(map_id, sample_id, x, y, fitted, PK) WITHOUT ROWID

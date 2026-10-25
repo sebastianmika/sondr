@@ -17,3 +17,14 @@ Swift end-to-end embeddings (51 files): min cosine 0.99870 (the 22.05 kHz file, 
 - Not editable, no migration: existing libraries keep old tags until recreated (owner recreates libraries). Retag diffs would drop them for samples touched by a retag.
 - Side effect: a split `90bpm` yields `90`, which is dropped; the hyphenated `90bpm-chop-bright` stays whole.
 - The preview reads the tagger directly and marks such tags "Ignored by default" instead of hiding them.
+
+## Multisamples as first-class objects (2026-10-25)
+- Owner suggestion adopted: a group has a name, members and a representative; tags and categories are the union over members, so `sample_groups.cluster_id` and `refreshClusters` are gone. Manual groups survive rebuilds (`manual` flag); editing an automatic group makes it manual.
+- Reported bug (area select → grouping off → on shows one row): reproduction tests at model and query level pass (20 groups → 80 flat rows → 20 groups). Working theory is SwiftUI `Table` row identity flipping between `TableRow` and `DisclosureTableRow`; mitigation `.id(browse.showsGroups)` on the Table. **Unverified until the owner clicks through it.**
+- Default group name is the representative's file stem (e.g. `Piano C3`); the pitch-less grouper key (`piano`) would read better, one-line switch.
+
+## Clusters as data (2026-10-25)
+- The eight clusters are only a seed; names, colours and descriptions are edited in Settings → Clusters. Edits that change centres re-sort all samples from stored vectors via `ClusterReassignJob` (chunked, resumable). The 0.30 threshold stays global and provisional; with the fused model 4 of 8 labelled fixtures still miss (`ClusterModelTests` known issues).
+
+## Drag-out (2026-10-25)
+- `NSItemProvider(contentsOf:)` made SwiftUI hand out a cached copy (Finder name "Waveform audio", DAW path under `~/Library/Caches/com.apple.SwiftUI.Drag-…`). Now `NSItemProvider(object: url as NSURL)` with `suggestedName`. Unverified in Finder/DAW until the owner re-tests.
