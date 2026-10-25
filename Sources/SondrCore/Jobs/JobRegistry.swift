@@ -2,6 +2,8 @@ import Foundation
 
 public enum JobKind: String, Sendable, CaseIterable {
     case scan, index, retag
+    /// Re-assigns every sample after the clusters were edited; excludes all other jobs.
+    case recluster
 }
 
 public enum JobError: Error, Equatable, LocalizedError {
@@ -27,6 +29,15 @@ public final class JobRegistry: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         guard running.insert(kind).inserted else { throw JobError.alreadyRunning(kind) }
+    }
+
+    /// Marks all `kinds` as running, or none of them if one already runs.
+    /// - Throws: ``JobError/alreadyRunning(_:)`` for the first kind that runs.
+    public func begin(_ kinds: [JobKind]) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        if let busy = kinds.first(where: running.contains) { throw JobError.alreadyRunning(busy) }
+        running.formUnion(kinds)
     }
 
     public func end(_ kind: JobKind) {

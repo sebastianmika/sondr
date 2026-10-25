@@ -714,3 +714,38 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     #expect(app.locations.first?.multisampleRules == MultisampleRules())
     #expect(try await groupCount() == 1)
 }
+
+@MainActor @Test func savingClustersAssignsTheIndexedSamplesAgain() async throws {
+    let work = try Workspace(files: 24)
+    defer { work.remove() }
+    let app = work.model()
+    await app.start()
+    await app.addLocation(work.library)
+    await app.startIndexing()
+
+    let kept = app.clusters.prefix(2).map { ClusterDefinition(id: $0.id, name: $0.name, color: $0.color, keywords: $0.keywords) }
+    let added = ClusterDefinition(id: -1, name: "mine", color: "#123456", keywords: "something else")
+    await app.saveClusters(kept + [added])
+
+    #expect(app.clusters.map(\.name) == kept.map(\.name) + ["mine"])
+    #expect(app.clusters.last?.id == 8)
+    #expect(app.clusters.last?.color == "#123456")
+    #expect(app.clusters.map(\.count).reduce(0, +) + app.unsortedCount == 24)
+    #expect(app.reclusterProgress == nil)
+    #expect(app.message == "Sorted 24 samples into clusters.")
+    #expect(app.palette.rgb(forCluster: 8) == .init(red: 0x12, green: 0x34, blue: 0x56))
+}
+
+@MainActor @Test func savingNoClustersIsRefusedAndChangesNothing() async throws {
+    let work = try Workspace(files: 6)
+    defer { work.remove() }
+    let app = work.model()
+    await app.start()
+    await app.addLocation(work.library)
+    await app.startIndexing()
+
+    await app.saveClusters([])
+
+    #expect(app.message == ClusterError.invalidEdit("At least one cluster is needed.").errorDescription)
+    #expect(app.clusters.count == 8)
+}
