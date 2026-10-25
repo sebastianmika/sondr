@@ -36,7 +36,7 @@ struct SampleListView: View {
             TableColumn("Name", value: \.name) { row in
                 HStack(spacing: 6) {
                     Image(systemName: playback.playingID == row.id ? "speaker.wave.2.fill" : "waveform")
-                        .foregroundStyle(playback.playingID == row.id ? Color.accentColor : .secondary)
+                        .foregroundStyle(playback.playingID == row.id ? Theme.signal : .secondary)
                         .frame(width: 16)
                     Text(row.name).lineLimit(1)
                     if let info = row.multisample { multisampleBadge(info, isGroupRow: isGroupRow(row)) }
@@ -51,16 +51,16 @@ struct SampleListView: View {
             .width(min: 70, ideal: 100)
             TableColumn("Tags") { row in
                 Text((isGroupRow(row) ? row.multisample?.tags ?? row.tags : row.tags).joined(separator: ", "))
-                    .foregroundStyle(.secondary).lineLimit(1).opacity(opacity(row))
+                    .font(.sondrMono(size: 11)).foregroundStyle(.secondary).lineLimit(1).opacity(opacity(row))
             }
-            .width(min: 80, ideal: 180)
+            .width(min: 80, ideal: 230)
             TableColumn("Length", value: \.duration) { row in
-                Text(formatDuration(row.duration)).monospacedDigit().opacity(opacity(row))
+                Text(formatDuration(row.duration)).font(.sondrMono(size: 12)).opacity(opacity(row))
             }
             .width(min: 50, ideal: 60, max: 80)
             TableColumn("Match") { row in
                 Text(browse.scores[row.id].map { String(format: "%.0f%%", max($0, 0) * 100) } ?? "")
-                    .monospacedDigit().foregroundStyle(.secondary)
+                    .font(.sondrMono(size: 12)).foregroundStyle(.secondary)
             }
             .width(min: 44, ideal: 50, max: 60)
         } rows: {
@@ -142,9 +142,9 @@ struct SampleListView: View {
             switch browse.content {
             case .browse: EmptyView()
             case .textSearch(let text):
-                banner("Best matches for “\(text)”", systemImage: "text.magnifyingglass", tint: .accentColor, clear: true)
+                banner("Best matches for “\(text)”", systemImage: "text.magnifyingglass", tint: Theme.signalText, clear: true)
             case .similar(_, let name):
-                banner("Sounds like \(name)", systemImage: "waveform.badge.magnifyingglass", tint: .accentColor, clear: true)
+                banner("Sounds like \(name)", systemImage: "waveform.badge.magnifyingglass", tint: Theme.signalText, clear: true)
             }
             if let error = browse.errorMessage { banner(error, systemImage: "xmark.octagon", tint: .red) }
             // Filter banners the explore panel will drive (map area, sound axes); inert until it sets them.
@@ -154,7 +154,7 @@ struct SampleListView: View {
                     Button { browse.filter.sampleIDs = nil } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.plain)
                     Spacer()
                 }
-                .padding(.horizontal, 10).padding(.vertical, 4).background(.bar)
+                .padding(.horizontal, 10).padding(.vertical, 4).background(Theme.panel)
             }
             if !browse.filter.dimRanges.isEmpty {
                 HStack {
@@ -162,7 +162,7 @@ struct SampleListView: View {
                     Button { browse.filter.dimRanges = [:] } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.plain)
                     Spacer()
                 }
-                .padding(.horizontal, 10).padding(.vertical, 4).background(.bar)
+                .padding(.horizontal, 10).padding(.vertical, 4).background(Theme.panel)
             }
             if !browse.filter.tags.isEmpty {
                 HStack {
@@ -173,7 +173,7 @@ struct SampleListView: View {
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 10).padding(.vertical, 4).background(.bar)
+                .padding(.horizontal, 10).padding(.vertical, 4).background(Theme.panel)
             }
         }
     }
@@ -184,18 +184,18 @@ struct SampleListView: View {
             Spacer()
             if clear { Button("Clear") { Task { await browse.clearResults() } } }
         }
-        .font(.callout).padding(.horizontal, 10).padding(.vertical, 6).background(.bar)
+        .font(.callout).padding(.horizontal, 10).padding(.vertical, 6).background(Theme.panel)
     }
 
     private var footer: some View {
         HStack {
             Text(browse.content == .browse ? "\(browse.rows.count) of \(browse.total)" : "\(browse.total) results")
-                .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                .font(.sondrMono(size: 11)).foregroundStyle(Theme.textDim)
             if browse.isLoading { ProgressView().controlSize(.mini) }
             Spacer()
             if let error = playback.errorMessage { Text(error).font(.caption).foregroundStyle(.red).lineLimit(1) }
         }
-        .padding(.horizontal, 10).padding(.vertical, 4).background(.bar)
+        .padding(.horizontal, 10).padding(.vertical, 4).background(Theme.panel)
     }
 
     @ViewBuilder private var emptyState: some View {
@@ -235,10 +235,11 @@ struct SampleListView: View {
     @ViewBuilder private func multisampleBadge(_ info: MultisampleInfo, isGroupRow: Bool) -> some View {
         if isGroupRow {
             Text(info.lowLabel.isEmpty ? "\(info.size) samples" : "\(info.size) pitches \(info.lowLabel)–\(info.highLabel)")
-                .font(.caption).foregroundStyle(.secondary)
-                .padding(.horizontal, 5).background(.quaternary, in: Capsule())
+                .font(.sondrMono(size: 10.5)).foregroundStyle(.secondary)
+                .padding(.horizontal, 5).padding(.vertical, 1)
+                .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Theme.hairline, lineWidth: 1))
         } else if let label = info.pitchLabel {
-            Text(label).font(.caption).monospacedDigit().foregroundStyle(.secondary)
+            Text(label).font(.sondrMono(size: 11)).foregroundStyle(.secondary)
         }
     }
 
@@ -254,13 +255,12 @@ struct SampleListView: View {
         if found.isEmpty {
             Text("–").foregroundStyle(.tertiary)
         } else if found.count == 1 {
-            Label(found[0].name, systemImage: "circle.fill")
+            Label(found[0].name, systemImage: "square.fill")
                 .labelStyle(ClusterLabelStyle(color: clusterColor(found[0].id, app.palette)))
         } else {
             HStack(spacing: 3) {
                 ForEach(found) { cluster in
-                    Image(systemName: "circle.fill").font(.system(size: 7))
-                        .foregroundStyle(clusterColor(cluster.id, app.palette))
+                    ClusterMarker(color: clusterColor(cluster.id, app.palette))
                 }
             }
             .help(found.map(\.name).joined(separator: ", "))
@@ -365,9 +365,9 @@ struct ClusterLabelStyle: LabelStyle {
     let color: Color
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 4) {
-            configuration.icon.font(.system(size: 7)).foregroundStyle(color)
-            configuration.title.lineLimit(1)
+        HStack(spacing: 6) {
+            ClusterMarker(color: color)
+            configuration.title.font(.sondrMono(size: 10.5)).textCase(.uppercase).foregroundStyle(.secondary).lineLimit(1)
         }
     }
 }

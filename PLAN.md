@@ -32,7 +32,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Panel ground, hairlines, caps section labels, square cluster markers with scheme-derived colour, tag chips, segmented LED progress. Remove `clusterColor` duplication by routing through `Theme`.
    - Verify: snapshots both schemes, compare to the mockup boards.
 
-5. **Sample table and toolbar** (M, +M if step 0 says custom selection)
+5. **Sample table and toolbar** (M) — DONE
    - Mono columns for length/root/match, dim caps cluster label, banners and toolbar toggles using `signalText` / `signal`, playing indicator.
    - Verify: snapshots both schemes with a selection, a playing row, and a group row (multisample disclosure still works).
 
