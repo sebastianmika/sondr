@@ -291,6 +291,23 @@ private struct Workspace {
     #expect(browse.rows.count == 20 && browse.total == 20)
 }
 
+@MainActor @Test func manualGroupSurvivesARescanAnIndexRunAndARegroup() async throws {
+    let work = try Workspace(files: 30)
+    defer { work.remove() }
+    let app = await indexedApp(files: 30, work)
+    let database = try #require(app.database)
+    let location = try #require(app.locations.first)
+    let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 3") }
+    let group = try await MultisampleGroups.create(database: database, locationID: location.id, name: "Mine", sampleIDs: ids)
+
+    await app.rescan(location)
+    await app.startIndexing(retryFailed: true)
+    await app.regroup()
+
+    let kept = try await MultisampleGroups.list(database: database, locationID: location.id)
+    #expect(kept.map(\.id) == [group] && kept[0].size == 3 && kept[0].manual)
+}
+
 @MainActor @Test func keywordAndTagFiltersNarrowTheList() async throws {
     let work = try Workspace(files: 120)
     defer { work.remove() }
