@@ -267,9 +267,7 @@ struct SampleListView: View {
 
     /// The audio file itself, so that Finder and DAWs get a real file. Missing files give nothing to drag.
     private func dragProvider(for row: SampleRow) -> NSItemProvider? {
-        let url = URL(fileURLWithPath: row.canonicalPath)
-        guard !row.missing, FileManager.default.fileExists(atPath: url.path) else { return nil }
-        return NSItemProvider(contentsOf: url)
+        DragProvider.provider(path: row.canonicalPath, missing: row.missing)
     }
 }
 

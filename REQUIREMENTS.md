@@ -333,7 +333,7 @@ Single selection:
 Multi-selection: "N samples selected", the union of their tags as chips (removing one removes it from all selected), and an "Add a tag to N samples" field. No selection: empty-state "Select a sample to see its details."
 
 ### 8.3 Drag-out
-Drag one or many rows as real file URLs (`NSItemProvider(contentsOf:)`) of the canonical, existing path; works for group rows and expanded members. A missing file yields no provider (nothing is dragged). Never offers a move. **Needs a person to verify** in Finder and the owner's DAW (checklist in §13.2).
+Drag one or many rows as real file URLs (`NSItemProvider(object: url as NSURL)` with `suggestedName` = the file name; not `contentsOf:`, which makes receivers get a renamed cache copy) of the canonical, existing path; works for group rows and expanded members. A missing file yields no provider (nothing is dragged). Never offers a move. **Needs a person to verify** in Finder and the owner's DAW (checklist in §13.2).
 
 ### 8.4 Context menu
 Single selection: Play, Find Similar (disabled without models). Any selection: Show in Finder.
