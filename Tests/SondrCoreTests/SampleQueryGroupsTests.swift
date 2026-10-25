@@ -86,13 +86,7 @@ private func assign(_ database: LibraryDatabase, _ assignments: [(Int64, Int, Do
             try db.execute(
                 sql: "UPDATE samples SET cluster_id = ?, cluster_score = ? WHERE id = ?", arguments: [cluster, score, id])
         }
-        // Stand-in for MultisampleGrouper.refreshClusters (agent E): most common sorted cluster, ties to the lower id.
-        try db.execute(
-            sql: """
-                UPDATE sample_groups SET cluster_id = (
-                    SELECT cluster_id FROM samples WHERE group_id = sample_groups.id AND cluster_score >= ?
-                    GROUP BY cluster_id ORDER BY count(*) DESC, cluster_id LIMIT 1)
-                """, arguments: [Double(ClusterAssigner.unsortedThreshold)])
+        try MultisampleGrouper.refreshClusters(db)
     }
 }
 
