@@ -16,15 +16,17 @@ let package = Package(
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.11.1"),
     ],
     targets: [
-        // MetalTSNE (vendored) is added with the map phase.
         .target(
             name: "SondrCore",
-            dependencies: [.product(name: "GRDB", package: "GRDB.swift")],
+            dependencies: [.product(name: "GRDB", package: "GRDB.swift"), "MetalTSNE"],
             resources: [.copy("Resources/ClapTokenizer"), .copy("Resources/Tagger"), .copy("Resources/Clusters")],
             swiftSettings: accelerateSettings
         ),
+        // Vendored from https://github.com/vals/mac-tsne, see ThirdParty/MetalTSNE/VENDORED.md.
+        .target(name: "MetalTSNE", swiftSettings: accelerateSettings),
         .executableTarget(name: "sondr-testlib", dependencies: ["SondrCore"]),
         .executableTarget(name: "sondr-multisamples", dependencies: ["SondrCore"]),
+        .testTarget(name: "MetalTSNETests", dependencies: ["MetalTSNE"]),
         .testTarget(name: "SondrCoreTests", dependencies: ["SondrCore"]),
     ]
 )
