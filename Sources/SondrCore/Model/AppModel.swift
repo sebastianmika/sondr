@@ -42,7 +42,10 @@ public final class AppModel {
     public let vectorIndex = VectorIndex()
     public private(set) var search: SearchService?
     public private(set) var embedder: (any Embedder)?
+    /// The 2D map; nil until the library is open.
+    public private(set) var map: MapModel?
     private var indexRun: IndexRun?
+    private let mapSettings: MapSettingsStore
 
     private let databaseURL: URL
     public let modelsDirectory: URL?
@@ -53,10 +56,13 @@ public final class AppModel {
     ///   - modelsDirectory: Models folder; default ``ModelLocator/find(environment:bundle:)``.
     ///   - embedder: Replaces the Core ML embedder (tests).
     ///   - computeUnits: Hardware for the Core ML models.
+    ///   - mapSettings: Where the 2D map settings are kept; default the app's user defaults.
     public init(
         databaseURL: URL = LibraryDatabase.defaultURL(), modelsDirectory: URL? = ModelLocator.find(),
-        embedder: (any Embedder)? = nil, computeUnits: EmbeddingService.ComputeUnits = .cpuAndGPU
+        embedder: (any Embedder)? = nil, computeUnits: EmbeddingService.ComputeUnits = .cpuAndGPU,
+        mapSettings: MapSettingsStore = .userDefaults()
     ) {
+        self.mapSettings = mapSettings
         self.databaseURL = databaseURL
         self.modelsDirectory = modelsDirectory
         self.embedder = embedder ?? modelsDirectory.map { EmbeddingService(modelsDirectory: $0, computeUnits: computeUnits) }
@@ -79,6 +85,21 @@ public final class AppModel {
             if let embedder {
                 search = SearchService(database: database, index: vectorIndex, embedder: embedder)
             }
+            let embedderForMap = embedder
+            let mapModel = MapModel(
+                database: database,
+                modelVersion: {
+                    if let embedderForMap { return try await embedderForMap.modelVersion() }
+                    return try await database.writer.read {
+                        try String.fetchOne($0, sql: "SELECT value FROM meta WHERE key = 'model_version'")
+                    } ?? "unknown"
+                },
+                settings: mapSettings,
+                unavailableReason: { [weak self] in
+                    self?.isIndexing == true ? "Indexing is running. Try again when it has finished." : nil
+                })
+            map = mapModel
+            await mapModel.load()
             await refresh()
             await finishPendingRetag()
             startup = .ready
@@ -103,7 +124,10 @@ public final class AppModel {
             clusters = clusterInfo.clusters
             unsortedCount = clusterInfo.unsorted
             tagCounts = tags
-            if reloadLists { libraryVersion += 1 }
+            if reloadLists {
+                libraryVersion += 1
+                await map?.reloadFromDatabase()
+            }
         } catch {
             message = error.localizedDescription
         }
@@ -310,6 +334,7 @@ public final class AppModel {
         }
         indexRun = nil
         indexProgress = nil
+        await map?.placeNewSamples()
         await refresh()
     }
 

@@ -43,7 +43,8 @@ private struct Workspace {
 
     @MainActor func model(embedder: (any Embedder)? = FakeEmbedder()) -> AppModel {
         AppModel(
-            databaseURL: databaseURL, modelsDirectory: nil, embedder: embedder)
+            databaseURL: databaseURL, modelsDirectory: nil, embedder: embedder,
+            mapSettings: MapSettingsStore(load: { MapParameters() }, save: { _ in }))
     }
 }
 
@@ -434,6 +435,61 @@ private func row(id: Int64 = 1, path: String, name: String) -> SampleRow {
     await app.deleteTag("drum")
     #expect(!app.tagCounts.contains { $0.name == "drum" })
     #expect(await app.allTags().contains { $0.name == "drum" } == false)
+}
+
+@MainActor @Test func theMapModelExistsOnceTheLibraryIsOpen() async throws {
+    let work = try Workspace()
+    defer { work.remove() }
+    let app = work.model()
+    #expect(app.map == nil)
+    await app.start()
+    let map = try #require(app.map)
+    #expect(map.current == nil && !map.canBuild)
+}
+
+@MainActor @Test(.enabled(if: metalAvailable, "Requires a Metal GPU"))
+func indexingPlacesNewSamplesOnTheCurrentMapAndRemovingAFolderRemovesThem() async throws {
+    let work = try Workspace(files: 60)
+    defer { work.remove() }
+    let app = work.model()
+    await app.start()
+    await app.addLocation(work.library)
+    await app.startIndexing()
+    let map = try #require(app.map)
+    #expect(map.canBuild)
+
+    map.beginTuning()
+    map.draft.sampleSize = 60
+    map.draft.iterations = 150
+    await map.waitForPreview()
+    await map.keep()
+    #expect(map.current?.pointCount == 60)
+
+    let more = work.folder.appendingPathComponent("More")
+    try TestLibraryGenerator.generate(count: 15, into: more, seed: 2)
+    await app.addLocation(more)
+    await app.startIndexing()
+    #expect(map.current?.pointCount == 75 && map.dots?.count == 75)
+
+    let location = try #require(app.locations.first { $0.path.hasSuffix("More") })
+    await app.removeLocation(location)
+    #expect(map.dots?.count == 60)
+}
+
+@MainActor @Test(.enabled(if: metalAvailable, "Requires a Metal GPU"))
+func aPreviewDoesNotStartWhileIndexingRuns() async throws {
+    let work = try Workspace(files: 80)
+    defer { work.remove() }
+    let app = work.model()
+    await app.start()
+    await app.addLocation(work.library)
+    let map = try #require(app.map)
+    #expect(map.unavailableReasonForTesting() == nil)
+    let indexing = Task { await app.startIndexing() }
+    while !app.isIndexing { await Task.yield() }
+    #expect(map.unavailableReasonForTesting() != nil)
+    await indexing.value
+    #expect(map.unavailableReasonForTesting() == nil)
 }
 
 @MainActor @Test func browseCanBeRestrictedToTheSamplesPickedOnTheMap() async throws {
