@@ -244,7 +244,7 @@ struct SampleListView: View {
     }
 
     private func clusterOf(_ row: SampleRow) -> ClusterInfo? {
-        if isGroupRow(row) { return row.multisample?.clusterID.flatMap { id in app.clusters.first { $0.id == id } } }
+        if isGroupRow(row) { return row.multisample?.clusters.first.flatMap { id in app.clusters.first { $0.id == id } } }
         guard let id = row.clusterID, !ClusterAssigner.isUnsorted(score: row.clusterScore) else { return nil }
         return app.clusters.first { $0.id == id }
     }

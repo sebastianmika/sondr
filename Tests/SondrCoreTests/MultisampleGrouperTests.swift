@@ -63,6 +63,8 @@ private func groupedSamples(_ database: LibraryDatabase) throws -> [(String, Int
         try Int64.fetchOne($0, sql: "SELECT representative_id FROM sample_groups")
     }
     #expect(representative == 3)
+    let name = try await database.writer.read { try String.fetchOne($0, sql: "SELECT name FROM sample_groups") }
+    #expect(name == "Piano_G3")
 }
 
 @Test func rebuildRejectsNoteNamesOnDifferentSounds() async throws {

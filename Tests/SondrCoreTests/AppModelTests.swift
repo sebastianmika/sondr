@@ -213,7 +213,7 @@ private struct Workspace {
 
     let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 4") }
     try await database.writer.write { db in
-        try db.execute(sql: "INSERT INTO sample_groups (id, location_id, folder, key, representative_id) VALUES (1, 1, '', 'x_{p}', ?)", arguments: [ids[2]])
+        try db.execute(sql: "INSERT INTO sample_groups (id, location_id, folder, key, name, representative_id) VALUES (1, 1, '', 'x_{p}', 'x', ?)", arguments: [ids[2]])
         for (index, id) in ids.enumerated() {
             try db.execute(sql: "UPDATE samples SET group_id = 1, pitch = ?, pitch_label = 'N' || ? WHERE id = ?", arguments: [48 + index, index, id])
         }
@@ -263,8 +263,8 @@ private struct Workspace {
         for group in 0..<20 {
             let members = ids[(group * 5)..<(group * 5 + 5)]
             try db.execute(
-                sql: "INSERT INTO sample_groups (id, location_id, folder, key, representative_id) VALUES (?, 1, '', ?, ?)",
-                arguments: [group + 1, "g\(group)_{p}", members[members.startIndex + 2]])
+                sql: "INSERT INTO sample_groups (id, location_id, folder, key, name, representative_id) VALUES (?, 1, '', ?, ?, ?)",
+                arguments: [group + 1, "g\(group)_{p}", "g\(group)", members[members.startIndex + 2]])
             for (index, id) in members.enumerated() {
                 try db.execute(
                     sql: "UPDATE samples SET group_id = ?, pitch = ?, pitch_label = 'N' || ? WHERE id = ?",

@@ -32,11 +32,9 @@ public struct SampleFilter: Equatable, Sendable {
 
     var isEmpty: Bool { self == SampleFilter() }
 
-    /// `WHERE` conditions on the `samples` table (without the word WHERE) and their arguments.
-    ///
-    /// With `grouped`, a multisample group counts as one sample for the cluster choice: it has the cluster of
-    /// the group (`sample_groups.cluster_id`, which the statement must join), not of the single member.
-    func conditions(dimStats: [Dim: DimStats.Range] = [:], grouped: Bool = false) -> (sql: String, arguments: StatementArguments) {
+    /// `WHERE` conditions on the `samples` table (without the word WHERE) and their arguments. They are
+    /// about single samples; a multisample group matches when any of its members does.
+    func conditions(dimStats: [Dim: DimStats.Range] = [:]) -> (sql: String, arguments: StatementArguments) {
         var clauses: [String] = []
         var arguments = StatementArguments()
         if !includeMissing { clauses.append("samples.missing = 0") }
@@ -66,13 +64,10 @@ public struct SampleFilter: Equatable, Sendable {
         }
         switch cluster {
         case .cluster(let id)?:
-            let own = "samples.cluster_id = ? AND samples.cluster_score >= ?"
-            clauses.append(grouped ? "((samples.group_id IS NULL AND \(own)) OR sample_groups.cluster_id = ?)" : own)
+            clauses.append("samples.cluster_id = ? AND samples.cluster_score >= ?")
             arguments += [id, Double(ClusterAssigner.unsortedThreshold)]
-            if grouped { arguments += [id] }
         case .unsorted?:
-            let own = "(samples.cluster_id IS NULL OR samples.cluster_score IS NULL OR samples.cluster_score < ?)"
-            clauses.append(grouped ? "((samples.group_id IS NULL AND \(own)) OR (samples.group_id IS NOT NULL AND sample_groups.cluster_id IS NULL))" : own)
+            clauses.append("(samples.cluster_id IS NULL OR samples.cluster_score IS NULL OR samples.cluster_score < ?)")
             arguments += [Double(ClusterAssigner.unsortedThreshold)]
         case nil: break
         }
@@ -120,9 +115,10 @@ public enum SampleSortKey: String, CaseIterable, Sendable {
     case filename, path, duration, added, clusterScore
     case brightness, percussiveness, energy, tonality, noisiness
 
-    var orderExpression: String {
+    /// With `grouped`, the statement joins `sample_groups` and a group row sorts by the group's name.
+    func orderExpression(grouped: Bool = false) -> String {
         switch self {
-        case .filename: return "COALESCE(samples.name, samples.filename) COLLATE NOCASE"
+        case .filename: return "\(grouped ? "COALESCE(sample_groups.name, samples.name, samples.filename)" : "COALESCE(samples.name, samples.filename)") COLLATE NOCASE"
         case .path: return "samples.rel_path COLLATE NOCASE"
         case .duration: return "samples.duration"
         case .added: return "samples.scanned_at"
@@ -175,16 +171,22 @@ public struct SampleRow: Equatable, Sendable, Identifiable {
 /// A sample's place in a multisample group (one instrument sampled at several pitches).
 public struct MultisampleInfo: Equatable, Sendable {
     public let groupID: Int64
+    /// The group's name; the file stem of its representative unless the owner renamed it.
+    public let groupName: String
     /// Members of the whole group, not only those matching the current filter.
     public let size: Int
-    /// The lowest and highest note of the group, as the file names write them.
+    /// The lowest and highest note of the group, as the file names write them; empty when members have no pitch.
     public let lowLabel: String
     public let highLabel: String
-    /// MIDI pitch (C4 = 60) of this sample, and its note as the file name writes it.
-    public let pitch: Int
+    /// MIDI pitch (C4 = 60) of this sample, and its note as the file name writes it; nil when unknown.
+    public let pitch: Int?
     public let pitchLabel: String?
-    /// The group's cluster (the most common one among its members); nil when none of them is sorted.
-    public let clusterID: Int?
+    /// Distinct tags over all members, sorted.
+    public let tags: [String]
+    /// Distinct sorted (score at or above the threshold) cluster ids over all members, ascending.
+    public let clusters: [Int]
+    /// For a member listed by ``SampleQuery/members(_:groupID:filter:)``: whether it matches the filter.
+    public var matches = true
 }
 
 public struct SamplePage: Equatable, Sendable {
@@ -198,8 +200,9 @@ public struct SamplePage: Equatable, Sendable {
 public enum SampleQuery {
     static let tagSeparator = "\u{1F}"
 
-    static let columns = """
-        samples.id, samples.filename, COALESCE(samples.name, samples.filename) AS name, samples.rel_path, samples.canonical_path, samples.duration,
+    static func columns(grouped: Bool = false) -> String {
+        """
+        samples.id, samples.filename, \(grouped ? "COALESCE(sample_groups.name, samples.name, samples.filename)" : "COALESCE(samples.name, samples.filename)") AS name, samples.rel_path, samples.canonical_path, samples.duration,
         samples.sample_rate, samples.channels, samples.format, samples.missing, samples.embed_state,
         samples.cluster_id, samples.cluster_score, samples.embed_error,
         samples.dim_brightness, samples.dim_percussiveness, samples.dim_energy, samples.dim_tonality,
@@ -208,12 +211,19 @@ public enum SampleQuery {
             WHERE sample_tags.sample_id = samples.id) AS tag_names,
         samples.group_id, samples.pitch, samples.pitch_label,
         (SELECT count(*) FROM samples member WHERE member.group_id = samples.group_id) AS group_size,
-        (SELECT member.pitch_label FROM samples member WHERE member.group_id = samples.group_id
+        (SELECT member.pitch_label FROM samples member WHERE member.group_id = samples.group_id AND member.pitch IS NOT NULL
             ORDER BY member.pitch, member.id LIMIT 1) AS group_low,
-        (SELECT member.pitch_label FROM samples member WHERE member.group_id = samples.group_id
+        (SELECT member.pitch_label FROM samples member WHERE member.group_id = samples.group_id AND member.pitch IS NOT NULL
             ORDER BY member.pitch DESC, member.id LIMIT 1) AS group_high,
-        (SELECT sample_groups.cluster_id FROM sample_groups WHERE sample_groups.id = samples.group_id) AS group_cluster
+        (SELECT sample_groups.name FROM sample_groups WHERE sample_groups.id = samples.group_id) AS group_name,
+        (SELECT group_concat(name, char(31)) FROM (SELECT DISTINCT tags.name AS name FROM samples member
+            JOIN sample_tags ON sample_tags.sample_id = member.id JOIN tags ON tags.id = sample_tags.tag_id
+            WHERE member.group_id = samples.group_id)) AS group_tags,
+        (SELECT group_concat(cluster_id) FROM (SELECT DISTINCT member.cluster_id AS cluster_id FROM samples member
+            WHERE member.group_id = samples.group_id AND member.cluster_id IS NOT NULL
+                AND member.cluster_score >= \(ClusterAssigner.unsortedThreshold) ORDER BY member.cluster_id)) AS group_clusters
         """
+    }
 
     /// One page of samples plus the total count: two statements, whatever the page size.
     ///
@@ -224,14 +234,16 @@ public enum SampleQuery {
         _ db: Database, filter: SampleFilter, sort: SampleSort = SampleSort(), offset: Int = 0, limit: Int = 100,
         collapseGroups: Bool = false
     ) throws -> SamplePage {
-        let (conditions, arguments) = filter.conditions(dimStats: try dimStats(db, filter), grouped: collapseGroups)
+        let (conditions, arguments) = filter.conditions(dimStats: try dimStats(db, filter))
         let direction = sort.ascending ? "ASC" : "DESC"
         let selected = collapseGroups ? "samples.id IN (SELECT id FROM first_of_group WHERE position = 1)" : conditions
         let withClause = collapseGroups ? "WITH \(firstOfGroup(conditions)) " : ""
+        let order = sort.key.orderExpression(grouped: collapseGroups)
         // NULLs (not indexed yet) go last in either direction; the id keeps paging stable.
         let sql = """
-            \(withClause)SELECT \(columns) FROM samples WHERE \(selected)
-            ORDER BY (\(sort.key.orderExpression) IS NULL), \(sort.key.orderExpression) \(direction), samples.id
+            \(withClause)SELECT \(columns(grouped: collapseGroups)) FROM samples
+            \(collapseGroups ? "LEFT JOIN sample_groups ON sample_groups.id = samples.group_id" : "") WHERE \(selected)
+            ORDER BY (\(order) IS NULL), \(order) \(direction), samples.id
             LIMIT ? OFFSET ?
             """
         let rows = try Row.fetchAll(db, sql: sql, arguments: arguments + [limit, offset]).map(makeRow)
@@ -244,12 +256,17 @@ public enum SampleQuery {
         return SamplePage(rows: rows, total: total)
     }
 
-    /// The members of a group in pitch order, whatever the filter.
-    public static func members(_ db: Database, groupID: Int64) throws -> [SampleRow] {
-        try Row.fetchAll(
+    /// The members of a group in pitch order, whatever the filter. Each carries whether it matches `filter`
+    /// (``MultisampleInfo/matches``), judged on the member alone.
+    public static func members(_ db: Database, groupID: Int64, filter: SampleFilter = SampleFilter()) throws -> [SampleRow] {
+        let (conditions, arguments) = filter.conditions(dimStats: try dimStats(db, filter))
+        return try Row.fetchAll(
             db,
-            sql: "SELECT \(columns) FROM samples WHERE samples.group_id = ? ORDER BY samples.pitch, samples.rel_path, samples.id",
-            arguments: [groupID]
+            sql: """
+                SELECT \(columns()), (\(conditions)) AS matches FROM samples WHERE samples.group_id = ?
+                ORDER BY samples.pitch, samples.rel_path, samples.id
+                """,
+            arguments: arguments + [groupID]
         ).map(makeRow)
     }
 
@@ -272,16 +289,16 @@ public enum SampleQuery {
         guard !ids.isEmpty else { return [] }
         let marks = Array(repeating: "?", count: ids.count).joined(separator: ", ")
         let found = try Row.fetchAll(
-            db, sql: "SELECT \(columns) FROM samples WHERE samples.id IN (\(marks))", arguments: StatementArguments(ids)
+            db, sql: "SELECT \(columns()) FROM samples WHERE samples.id IN (\(marks))", arguments: StatementArguments(ids)
         ).map(makeRow)
         let byID = Dictionary(uniqueKeysWithValues: found.map { ($0.id, $0) })
         return ids.compactMap { byID[$0] }
     }
 
-    /// Ids of all samples matching `filter`.
-    public static func ids(_ db: Database, filter: SampleFilter) throws -> [Int64] {
+    /// Ids of all samples matching `filter` (at most `limit` of them).
+    public static func ids(_ db: Database, filter: SampleFilter, limit: Int = -1) throws -> [Int64] {
         let (conditions, arguments) = filter.conditions(dimStats: try dimStats(db, filter))
-        return try Int64.fetchAll(db, sql: "SELECT id FROM samples WHERE \(conditions)", arguments: arguments)
+        return try Int64.fetchAll(db, sql: "SELECT id FROM samples WHERE \(conditions) LIMIT ?", arguments: arguments + [limit])
     }
 
     /// Most used tags among the samples matching `filter`, with their counts.
@@ -326,11 +343,15 @@ public enum SampleQuery {
     }
 
     private static func multisample(_ row: Row) -> MultisampleInfo? {
-        guard let groupID: Int64 = row["group_id"], let pitch: Int = row["pitch"] else { return nil }
+        guard let groupID: Int64 = row["group_id"] else { return nil }
         let low: String? = row["group_low"], high: String? = row["group_high"]
+        let tags: String? = row["group_tags"], clusters: String? = row["group_clusters"]
         return MultisampleInfo(
-            groupID: groupID, size: row["group_size"], lowLabel: low ?? "", highLabel: high ?? "", pitch: pitch,
-            pitchLabel: row["pitch_label"], clusterID: row["group_cluster"])
+            groupID: groupID, groupName: row["group_name"], size: row["group_size"], lowLabel: low ?? "", highLabel: high ?? "",
+            pitch: row["pitch"], pitchLabel: row["pitch_label"],
+            tags: tags?.components(separatedBy: tagSeparator).sorted() ?? [],
+            clusters: clusters?.split(separator: ",").compactMap { Int($0) } ?? [],
+            matches: row.hasColumn("matches") ? (row["matches"] as Int) != 0 : true)
     }
 
     private static func makeRow(_ row: Row) -> SampleRow {

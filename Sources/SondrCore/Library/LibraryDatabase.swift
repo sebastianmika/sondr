@@ -112,8 +112,9 @@ public final class LibraryDatabase: Sendable {
             location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
             folder TEXT NOT NULL,
             key TEXT NOT NULL,
+            name TEXT NOT NULL,
+            manual INTEGER NOT NULL DEFAULT 0,
             representative_id INTEGER REFERENCES samples(id) ON DELETE SET NULL,
-            cluster_id INTEGER REFERENCES clusters(id) ON DELETE SET NULL,
             UNIQUE (location_id, folder, key)
         );
 

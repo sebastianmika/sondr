@@ -19,7 +19,7 @@ private func makeLibrary() throws -> LibraryDatabase {
                     VALUES (?, ?, ?, ?, ?, 1, 48000, 1, 'wav', 1, 0, 0)
                     """, arguments: [id, "h\(id)", "/lib/\(name).wav", "\(name).wav", "\(name).wav"])
         }
-        try db.execute(sql: "INSERT INTO sample_groups (id, location_id, folder, key, representative_id) VALUES (1, 1, '', 'piano_{p}', 3)")
+        try db.execute(sql: "INSERT INTO sample_groups (id, location_id, folder, key, name, representative_id) VALUES (1, 1, '', 'piano_{p}', 'Piano', 3)")
         for (index, pitch) in pitches.enumerated() {
             guard let pitch else { continue }
             try db.execute(
@@ -48,7 +48,7 @@ private func browse(_ database: LibraryDatabase, keyword: String = "", collapse:
     let database = try makeLibrary()
     let rows = try browse(database, collapse: true).rows
     let info = try #require(rows[1].multisample)
-    #expect(info == MultisampleInfo(groupID: 1, size: 4, lowLabel: "C3", highLabel: "C4", pitch: 55, pitchLabel: "G3", clusterID: nil))
+    #expect(info == MultisampleInfo(groupID: 1, groupName: "Piano", size: 4, lowLabel: "C3", highLabel: "C4", pitch: 55, pitchLabel: "G3", tags: [], clusters: []))
     #expect(rows[0].multisample == nil)
 }
 
@@ -86,12 +86,7 @@ private func assign(_ database: LibraryDatabase, _ assignments: [(Int64, Int, Do
             try db.execute(
                 sql: "UPDATE samples SET cluster_id = ?, cluster_score = ? WHERE id = ?", arguments: [cluster, score, id])
         }
-        try MultisampleGrouper.refreshClusters(db)
     }
-}
-
-private func groupCluster(_ database: LibraryDatabase) throws -> Int? {
-    try database.writer.read { try Int.fetchOne($0, sql: "SELECT cluster_id FROM sample_groups WHERE id = 1") }
 }
 
 private func browse(_ database: LibraryDatabase, cluster: SampleFilter.ClusterChoice, collapse: Bool) throws -> SamplePage {
@@ -100,41 +95,59 @@ private func browse(_ database: LibraryDatabase, cluster: SampleFilter.ClusterCh
     return try database.writer.read { try SampleQuery.browse($0, filter: filter, collapseGroups: collapse) }
 }
 
-@Test func groupClusterIsTheMostCommonSortedClusterOfItsMembers() throws {
+@Test func groupRowListsTheDistinctSortedClustersAndTagsOfAllMembers() throws {
     let database = try makeLibrary()
-    try assign(database, [(1, 2, 0.9), (2, 1, 0.9), (3, 1, 0.9), (4, 1, 0.1)])
-    #expect(try groupCluster(database) == 1)
-    // 1 vs 2, one member each: the lower id wins. A weak member does not count.
-    try assign(database, [(1, 2, 0.9), (2, 1, 0.9), (3, 2, 0.1), (4, 2, 0.1)])
-    #expect(try groupCluster(database) == 1)
-    try assign(database, [(1, 2, 0.1), (2, 1, 0.1), (3, 2, 0.1), (4, 2, 0.1)])
-    #expect(try groupCluster(database) == nil)
+    // Members: bass, bass, lead, weak lead (does not count).
+    try assign(database, [(1, 1, 0.9), (2, 1, 0.9), (3, 2, 0.9), (4, 2, 0.1)])
+    try database.writer.write { db in
+        try db.execute(sql: "INSERT INTO tags (id, name) VALUES (1, 'warm'), (2, 'soft')")
+        try db.execute(sql: "INSERT INTO sample_tags (sample_id, tag_id, source) VALUES (1, 1, 'auto'), (2, 1, 'auto'), (4, 2, 'auto')")
+    }
+    let info = try #require(try browse(database, collapse: true).rows[1].multisample)
+    #expect(info.clusters == [1, 2])
+    #expect(info.tags == ["soft", "warm"])
+    #expect(info.groupName == "Piano")
 }
 
-@Test func collapsedClusterFilterListsGroupsByTheirOwnCluster() throws {
+@Test func collapsedClusterFilterTakesAGroupWhenAnyMemberMatches() throws {
     let database = try makeLibrary()
     // Group: three bass members and one lead. Singles: Kick is a lead, Snare is bass.
     try assign(database, [(1, 1, 0.9), (2, 1, 0.9), (3, 1, 0.9), (4, 2, 0.9), (5, 2, 0.9), (6, 1, 0.9)])
 
-    let bass = try browse(database, cluster: .cluster(1), collapse: true)
-    #expect(bass.rows.map(\.filename) == ["Piano_G3.wav", "Snare_Soft.wav"])
-    #expect(bass.total == 2)
-    #expect(bass.rows[0].multisample?.clusterID == 1)
-
-    // The lone lead member does not bring the group into "leads".
+    #expect(try browse(database, cluster: .cluster(1), collapse: true).rows.map(\.filename) == ["Piano_G3.wav", "Snare_Soft.wav"])
+    // The lone lead member brings the group into "leads", shown as that member.
     let leads = try browse(database, cluster: .cluster(2), collapse: true)
-    #expect(leads.rows.map(\.filename) == ["Kick_Hard.wav"])
-
+    #expect(leads.rows.map(\.filename) == ["Kick_Hard.wav", "Piano_C4.wav"])
+    #expect(leads.total == 2)
     // Flat, every sample counts for itself.
     #expect(try browse(database, cluster: .cluster(2), collapse: false).rows.map(\.filename) == ["Kick_Hard.wav", "Piano_C4.wav"])
 }
 
-@Test func collapsedUnsortedFilterListsGroupsWithoutASortedMember() throws {
+@Test func collapsedUnsortedFilterTakesAGroupWithAnUnsortedMember() throws {
     let database = try makeLibrary()
-    try assign(database, [(1, 1, 0.1), (2, 1, 0.1), (3, 2, 0.1), (4, 1, 0.1), (5, 2, 0.9), (6, 1, 0.1)])
-    #expect(try browse(database, cluster: .unsorted, collapse: true).rows.map(\.filename) == ["Piano_G3.wav", "Snare_Soft.wav"])
-    try assign(database, [(1, 1, 0.9)])
+    try assign(database, [(1, 1, 0.9), (2, 1, 0.9), (3, 2, 0.9), (4, 1, 0.9), (5, 2, 0.9), (6, 1, 0.1)])
     #expect(try browse(database, cluster: .unsorted, collapse: true).rows.map(\.filename) == ["Snare_Soft.wav"])
+    try assign(database, [(1, 1, 0.1)])
+    #expect(try browse(database, cluster: .unsorted, collapse: true).rows.map(\.filename) == ["Piano_C3.wav", "Snare_Soft.wav"])
+}
+
+@Test func collapsedRowNameAndNameSortUseTheGroupName() throws {
+    let database = try makeLibrary()
+    try database.writer.write { try $0.execute(sql: "UPDATE sample_groups SET name = 'Zeta pad'") }
+    let page = try browse(database, collapse: true)
+    #expect(page.rows.map(\.name) == ["Kick_Hard.wav", "Snare_Soft.wav", "Zeta pad"])
+    let flat = try browse(database, collapse: false)
+    #expect(flat.rows.map(\.name).contains("Piano_G3.wav"))
+}
+
+@Test func membersFlagWhichOnesMatchTheFilter() throws {
+    let database = try makeLibrary()
+    var filter = SampleFilter()
+    filter.keyword = "E3"
+    let members = try database.writer.read { try SampleQuery.members($0, groupID: 1, filter: filter) }
+    #expect(members.map(\.multisample?.matches) == [false, true, false, false])
+    let all = try database.writer.read { try SampleQuery.members($0, groupID: 1) }
+    #expect(all.allSatisfy { $0.multisample?.matches == true })
 }
 
 @Test func sampleIDsWithCollapseReturnsOneRowPerGroupWithAMatchingMember() throws {
