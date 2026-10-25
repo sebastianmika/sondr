@@ -213,7 +213,7 @@ private struct Workspace {
 
     let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 4") }
     try await database.writer.write { db in
-        try db.execute(sql: "INSERT INTO sample_groups (id, location_id, folder, key, representative_id) VALUES (1, 1, '', 'x_{p}', ?)", arguments: [ids[2]])
+        try db.execute(sql: "INSERT INTO sample_groups (id, location_id, folder, key, name, representative_id) VALUES (1, 1, '', 'x_{p}', 'x', ?)", arguments: [ids[2]])
         for (index, id) in ids.enumerated() {
             try db.execute(sql: "UPDATE samples SET group_id = 1, pitch = ?, pitch_label = 'N' || ? WHERE id = ?", arguments: [48 + index, index, id])
         }
@@ -247,6 +247,87 @@ private struct Workspace {
     #expect(again.multisample?.size == 4)
     await browse.setExpanded(1, true)
     #expect(browse.children(of: again).count == 3)
+}
+
+@MainActor @Test func togglingGroupsOffAndOnAfterAnAreaSelectionKeepsEveryGroup() async throws {
+    let work = try Workspace(files: 120)
+    defer { work.remove() }
+    let app = await indexedApp(files: 120, work)
+    let database = try #require(app.database)
+    let browse = BrowseModel(app: app)
+    await browse.reload()
+
+    // 100 samples in 20 groups of 5; the area covers 80 of them (4 per group).
+    let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 100") }
+    try await database.writer.write { db in
+        for group in 0..<20 {
+            let members = ids[(group * 5)..<(group * 5 + 5)]
+            try db.execute(
+                sql: "INSERT INTO sample_groups (id, location_id, folder, key, name, representative_id) VALUES (?, 1, '', ?, ?, ?)",
+                arguments: [group + 1, "g\(group)_{p}", "g\(group)", members[members.startIndex + 2]])
+            for (index, id) in members.enumerated() {
+                try db.execute(
+                    sql: "UPDATE samples SET group_id = ?, pitch = ?, pitch_label = 'N' || ? WHERE id = ?",
+                    arguments: [group + 1, 48 + index, index, id])
+            }
+        }
+    }
+    let area = Set(ids.enumerated().filter { $0.offset % 5 != 4 }.map(\.element))
+    #expect(area.count == 80)
+
+    browse.filter.sampleIDs = area
+    await browse.settle()
+    #expect(browse.showsGroups)
+    #expect(browse.rows.count == 20 && browse.total == 20)
+
+    browse.collapseGroups = false
+    await browse.settle()
+    #expect(!browse.showsGroups)
+    #expect(browse.rows.count == 80 && browse.total == 80)
+
+    browse.collapseGroups = true
+    await browse.settle()
+    #expect(browse.showsGroups)
+    #expect(browse.rows.count == 20 && browse.total == 20)
+}
+
+@MainActor @Test func expandedGroupFlagsTheMembersThatMatchAndHighlightsOnlyThose() async throws {
+    let work = try Workspace(files: 30)
+    defer { work.remove() }
+    let app = await indexedApp(files: 30, work)
+    let database = try #require(app.database)
+    let location = try #require(app.locations.first)
+    let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 4") }
+    let group = try await MultisampleGroups.create(database: database, locationID: location.id, name: "G", sampleIDs: ids)
+    let browse = BrowseModel(app: app)
+
+    browse.filter.sampleIDs = [ids[0], ids[1]]
+    await browse.settle()
+    #expect(browse.total == 1)
+    await browse.setExpanded(group, true)
+    let row = try #require(browse.rows.first)
+    let flags = Dictionary(uniqueKeysWithValues: browse.children(of: row).map { ($0.id, $0.multisample?.matches) })
+    #expect(flags.count == 3)
+    #expect(row.multisample?.groupName == "G" && row.name == "G")
+    for id in ids where id != row.id { #expect(flags[id] == [ids[0], ids[1]].contains(id)) }
+    #expect(browse.highlight == [ids[0], ids[1]])
+}
+
+@MainActor @Test func manualGroupSurvivesARescanAnIndexRunAndARegroup() async throws {
+    let work = try Workspace(files: 30)
+    defer { work.remove() }
+    let app = await indexedApp(files: 30, work)
+    let database = try #require(app.database)
+    let location = try #require(app.locations.first)
+    let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 3") }
+    let group = try await MultisampleGroups.create(database: database, locationID: location.id, name: "Mine", sampleIDs: ids)
+
+    await app.rescan(location)
+    await app.startIndexing(retryFailed: true)
+    await app.regroup()
+
+    let kept = try await MultisampleGroups.list(database: database, locationID: location.id)
+    #expect(kept.map(\.id) == [group] && kept[0].size == 3 && kept[0].manual)
 }
 
 @MainActor @Test func keywordAndTagFiltersNarrowTheList() async throws {

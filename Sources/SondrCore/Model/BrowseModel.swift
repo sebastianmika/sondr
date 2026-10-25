@@ -164,7 +164,8 @@ public final class BrowseModel {
 
     // MARK: Multisample groups
 
-    /// What the list shows below an expanded group row: the other members, in pitch order.
+    /// What the list shows below an expanded group row: the other members, in pitch order. Each says in
+    /// `multisample?.matches` whether it matches the current filter.
     /// Nothing for single samples, collapsed groups and when groups are not collapsed.
     public func children(of row: SampleRow) -> [SampleRow] {
         guard content == .browse, showsGroups, let group = row.multisample?.groupID, expandedGroups.contains(group)
@@ -180,7 +181,8 @@ public final class BrowseModel {
             return
         }
         if membersOfGroup[groupID] == nil, let database = app.database {
-            membersOfGroup[groupID] = try? await database.writer.read { try SampleQuery.members($0, groupID: groupID) }
+            let filter = filter
+            membersOfGroup[groupID] = try? await database.writer.read { try SampleQuery.members($0, groupID: groupID, filter: filter) }
         }
         if membersOfGroup[groupID] != nil { expandedGroups.insert(groupID) }
     }
@@ -205,12 +207,16 @@ public final class BrowseModel {
         case .textSearch, .similar:
             highlight = Set(rows.map(\.id))
         case .browse:
-            guard !filter.isEmpty, total <= Self.highlightLimit, let database = app.database else {
+            guard !filter.isEmpty, let database = app.database else {
                 highlight = nil
                 return
             }
-            let filter = filter
-            let ids = try? await database.writer.read { Set(try SampleQuery.ids($0, filter: filter)) }
+            // `total` counts group rows when groups are collapsed, so the limit is checked on the members.
+            let filter = filter, limit = Self.highlightLimit
+            let ids = try? await database.writer.read {
+                let found = try SampleQuery.ids($0, filter: filter, limit: limit + 1)
+                return found.count > limit ? nil : Set(found)
+            }
             if current == generation { highlight = ids }
         }
     }

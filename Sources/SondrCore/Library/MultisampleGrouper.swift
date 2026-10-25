@@ -73,23 +73,34 @@ public enum MultisampleGrouper {
         }
 
         let stored = accepted
+        let byID = Dictionary(rows.map { ($0.sampleID, $0) }, uniquingKeysWith: { first, _ in first })
         let written = try await database.writer.write { db -> (groups: Int, samples: Int) in
             var groups = 0, samples = 0
+            // Manual groups stay as they are, and so do their members.
             try db.execute(
                 sql: """
                     UPDATE samples SET group_id = NULL, pitch = NULL, pitch_label = NULL
-                    WHERE group_id IN (SELECT id FROM sample_groups WHERE location_id = ?)
+                    WHERE group_id IN (SELECT id FROM sample_groups WHERE location_id = ? AND manual = 0)
                     """, arguments: [locationID])
-            try db.execute(sql: "DELETE FROM sample_groups WHERE location_id = ?", arguments: [locationID])
-            var taken = Set<Int64>()
+            try db.execute(sql: "DELETE FROM sample_groups WHERE location_id = ? AND manual = 0", arguments: [locationID])
+            try db.execute(
+                sql: """
+                    DELETE FROM sample_groups WHERE location_id = ? AND manual = 1
+                        AND NOT EXISTS (SELECT 1 FROM samples WHERE group_id = sample_groups.id)
+                    """, arguments: [locationID])
+            var taken = Set(try Int64.fetchAll(
+                db, sql: "SELECT samples.id FROM samples JOIN sample_groups ON sample_groups.id = samples.group_id WHERE sample_groups.location_id = ?",
+                arguments: [locationID]))
             for (group, ids) in stored {
                 let members = zip(group.members, ids).filter { taken.insert($1).inserted }
                 guard Set(members.map { $0.0.midi }).count >= MultisampleNames.minimumPitches else { continue }
                 let medianPitch = Array(Set(members.map { $0.0.midi })).sorted().medianValue
-                let representative = members.first { $0.0.midi == medianPitch }?.1
+                guard let representative = members.first(where: { $0.0.midi == medianPitch })
+                else { continue }
+                let stem = ((byID[representative.1]?.path ?? "") as NSString).lastPathComponent as NSString
                 try db.execute(
-                    sql: "INSERT INTO sample_groups (location_id, folder, key, representative_id) VALUES (?, ?, ?, ?)",
-                    arguments: [locationID, group.folder, group.key, representative])
+                    sql: "INSERT INTO sample_groups (location_id, folder, key, name, representative_id) VALUES (?, ?, ?, ?, ?)",
+                    arguments: [locationID, group.folder, group.key, stem.deletingPathExtension, representative.1])
                 let groupID = db.lastInsertedRowID
                 for (member, id) in members {
                     try db.execute(
@@ -99,25 +110,11 @@ public enum MultisampleGrouper {
                 groups += 1
                 samples += members.count
             }
-            try refreshClusters(db)
             return (groups, samples)
         }
         summary.groups = written.groups
         summary.samples = written.samples
         return summary
-    }
-
-    /// Gives every group the cluster most of its members have (ties: the lower id), counting only members
-    /// that are sorted, not "unsorted". A group without any such member gets none. Call after samples are
-    /// assigned to clusters and after groups change.
-    public static func refreshClusters(_ db: Database) throws {
-        try db.execute(
-            sql: """
-                UPDATE sample_groups SET cluster_id = (
-                    SELECT cluster_id FROM samples
-                    WHERE group_id = sample_groups.id AND cluster_id IS NOT NULL AND cluster_score >= ?
-                    GROUP BY cluster_id ORDER BY count(*) DESC, cluster_id LIMIT 1)
-                """, arguments: [Double(ClusterAssigner.unsortedThreshold)])
     }
 
     /// A numbered group takes its pitches from the files' root notes: a pack that skips a number in its names
