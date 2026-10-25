@@ -7,3 +7,7 @@
 - Conversion needed no new patches beyond the four old ones (bicubic time resize, mean pool, rank-5 Swin windows, -1e4 mask). Audio fp16 batch 16, text fp32.
 - Parity (51 audio fixtures, 27 text queries, `validate.py --units CPU_AND_GPU`): audio min cosine 0.99981, mean 1.0001; text min 1.00000. Throughput 385 emb/s at batch 16 on `cpuAndGPU` (old model: 256).
 - Model version string: `laion/clap-htsat-fused@365dea6e-afp16-tfp32-v1`.
+
+## Mel filter bank: HTK, not Slaney (2026-10-25)
+REQUIREMENTS §5.1 says Slaney scale and norm. That holds for `clap-htsat-unfused` (`truncation: rand_trunc`). With `clap-htsat-fused` (`truncation: fusion`) HF's `ClapFeatureExtractor` uses the `mel_filters` bank (HTK scale, no norm) for clips of at most 10 s. `MelSpectrogram.swift` uses that bank; Slaney gave a 50+ dB mismatch against the golden features. Mel parity is exactly 0.0 dB on the 5 fixtures.
+Swift end-to-end embeddings (51 files): min cosine 0.99870 (the 22.05 kHz file, resampler difference), mean 0.99997. Text min 0.9999999.
