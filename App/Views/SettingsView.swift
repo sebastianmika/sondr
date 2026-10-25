@@ -8,6 +8,8 @@ enum Preferences {
     static let settingsTab = "settingsTab"
     static let showSoundMap = "showSoundMap"
     static let groupMultisamples = "groupMultisamples"
+    static let explorerTab = "explorerTab"
+    static let explorerHeight = "explorerHeight"
 
     static var savedComputeUnits: EmbeddingService.ComputeUnits {
         UserDefaults.standard.string(forKey: computeUnits).flatMap(EmbeddingService.ComputeUnits.init(rawValue:)) ?? .cpuAndGPU

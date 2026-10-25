@@ -18,9 +18,7 @@ struct SampleListView: View {
     var body: some View {
         VStack(spacing: 0) {
             if showSoundMap {
-                // Extension point: the explore panel (Axes | Map) goes here.
-                Text("Explore panel: not built yet").font(.caption).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity).padding(8)
+                ExplorePanel(browse: browse)
                 Divider()
             }
             table
