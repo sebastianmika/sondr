@@ -10,10 +10,10 @@ struct JobsBar: View {
         VStack(alignment: .leading, spacing: 6) {
             if let scan = app.scanStatus {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Scanning \(URL(fileURLWithPath: scan.location).lastPathComponent)…").font(.caption)
+                    Text("Scanning \(URL(fileURLWithPath: scan.location).lastPathComponent)…").sondrLabel()
                     if let progress = scan.progress, progress.found > 0 {
-                        ProgressView(value: Double(progress.processed), total: Double(progress.found))
-                        Text("\(progress.processed) of \(progress.found) files").font(.caption2).foregroundStyle(.secondary)
+                        LEDProgress(value: Double(progress.processed), total: Double(progress.found))
+                        Text("\(progress.processed) of \(progress.found) files").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
                     } else {
                         ProgressView().controlSize(.small)
                     }
@@ -21,17 +21,17 @@ struct JobsBar: View {
             }
             if let retag = app.retagProgress {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Updating tags").font(.caption)
-                    ProgressView(value: Double(retag.done), total: Double(max(retag.total, 1)))
-                    Text("\(retag.done.formatted()) of \(retag.total.formatted())").font(.caption2).foregroundStyle(.secondary)
+                    Text("Updating tags").sondrLabel()
+                    LEDProgress(value: Double(retag.done), total: Double(max(retag.total, 1)))
+                    Text("\(retag.done.formatted()) of \(retag.total.formatted())").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
                 }
             }
             if let recluster = app.reclusterProgress {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Sorting into clusters").font(.caption)
-                    ProgressView(value: Double(recluster.done), total: Double(max(recluster.total, 1)))
+                    Text("Sorting into clusters").sondrLabel()
+                    LEDProgress(value: Double(recluster.done), total: Double(max(recluster.total, 1)))
                     HStack {
-                        Text("\(recluster.done.formatted()) of \(recluster.total.formatted())").font(.caption2).foregroundStyle(.secondary)
+                        Text("\(recluster.done.formatted()) of \(recluster.total.formatted())").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
                         Spacer()
                         Button("Cancel") { app.cancelRecluster() }.controlSize(.small)
                     }
@@ -39,10 +39,10 @@ struct JobsBar: View {
             }
             if let index = app.indexProgress {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Indexing").font(.caption)
-                    ProgressView(value: Double(index.done + index.failed), total: Double(max(index.total, 1)))
+                    Text("Indexing").sondrLabel()
+                    LEDProgress(value: Double(index.done + index.failed), total: Double(max(index.total, 1)))
                     HStack {
-                        Text("\(index.done + index.failed) of \(index.total)").font(.caption2).foregroundStyle(.secondary)
+                        Text("\(index.done + index.failed) of \(index.total)").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
                         Spacer()
                         Button("Cancel") { app.cancelIndexing() }.controlSize(.small)
                     }
@@ -69,10 +69,11 @@ struct JobsBar: View {
                     }
                 }
             }
-            Text(summary).font(.caption2).foregroundStyle(.secondary)
+            Text(summary).font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
         }
         .padding(10)
-        .background(.bar)
+        .background(Theme.panel)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.hairline).frame(height: 1) }
     }
 
     private var summary: String {

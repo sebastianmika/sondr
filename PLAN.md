@@ -28,7 +28,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Bundle IBM Plex Mono 400/500/600 + OFL text under `App/Fonts/`, register at launch, `Font.sondrMono(size:weight:)`, caps-label modifier.
    - Verify: snapshot shows Plex (not the fallback); check the font name resolves in a unit-free launch log.
 
-4. **Sidebar and jobs bar** (M)
+4. **Sidebar and jobs bar** (M) — DONE
    - Panel ground, hairlines, caps section labels, square cluster markers with scheme-derived colour, tag chips, segmented LED progress. Remove `clusterColor` duplication by routing through `Theme`.
    - Verify: snapshots both schemes, compare to the mockup boards.
 

@@ -15,35 +15,46 @@ struct SidebarView: View {
 
     var body: some View {
         List(selection: $selection) {
-            Section("Library") {
-                Label("All samples", systemImage: "waveform").badge(app.stats.samples - app.stats.missing)
+            Section {
+                row("All samples", count: app.stats.samples - app.stats.missing) { Image(systemName: "waveform") }
                     .tag(SidebarItem.all)
-                Label("Unsorted", systemImage: "questionmark.folder").badge(app.unsortedCount)
+                row("Unsorted", count: app.unsortedCount) { Image(systemName: "questionmark.folder") }
                     .tag(SidebarItem.unsorted)
+            } header: {
+                Text("Library").sondrLabel()
             }
-            Section("Clusters") {
+            Section {
                 ForEach(app.clusters) { cluster in
-                    Label {
-                        Text(cluster.name)
-                    } icon: {
-                        Circle().fill(clusterColor(cluster.id, app.palette)).frame(width: 9, height: 9)
-                    }
-                    .badge(cluster.count)
-                    .tag(SidebarItem.cluster(cluster.id))
+                    row(cluster.name, count: cluster.count) { ClusterMarker(color: clusterColor(cluster.id, app.palette)) }
+                        .tag(SidebarItem.cluster(cluster.id))
                 }
+            } header: {
+                Text("Clusters").sondrLabel()
             }
             if !app.tagCounts.isEmpty {
                 Section {
                     TagCloud(browse: browse)
                     Button("Manage Tags…") { managingTags = true }.buttonStyle(.borderless)
                 } header: {
-                    Text("Tags")
+                    Text("Tags").sondrLabel()
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.panel)
         .safeAreaInset(edge: .bottom) { JobsBar(showingFailures: $showingFailures) }
         .sheet(isPresented: $managingTags) { TagManagerView() }
         .onChange(of: selection) { _, item in apply(item) }
+    }
+
+    /// A sidebar row: icon, name, count in mono.
+    private func row<Icon: View>(_ title: String, count: Int, @ViewBuilder icon: () -> Icon) -> some View {
+        HStack(spacing: 8) {
+            icon()
+            Text(title)
+            Spacer(minLength: 4)
+            Text(count.formatted()).font(.sondrMono(size: 11.5)).foregroundStyle(Theme.textDim)
+        }
     }
 
     private func apply(_ item: SidebarItem?) {
@@ -58,11 +69,6 @@ struct SidebarView: View {
     }
 }
 
-func clusterColor(_ id: Int, _ palette: ClusterPalette) -> Color {
-    let rgb = palette.rgb(forCluster: id)
-    return Color(red: Double(rgb.red) / 255, green: Double(rgb.green) / 255, blue: Double(rgb.blue) / 255)
-}
-
 /// Most used tags among all samples; a click adds or removes the tag from the filter.
 struct TagCloud: View {
     @Environment(AppModel.self) private var app
@@ -75,11 +81,7 @@ struct TagCloud: View {
                 Button {
                     if active { browse.filter.tags.removeAll { $0 == tag.name } } else { browse.filter.tags.append(tag.name) }
                 } label: {
-                    Text("\(tag.name) \(tag.count)")
-                        .font(.caption)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(active ? Color.accentColor : Color.secondary.opacity(0.15), in: Capsule())
-                        .foregroundStyle(active ? Color.white : Color.primary)
+                    TagChip(text: "\(tag.name) \(tag.count)", active: active)
                 }
                 .buttonStyle(.plain)
             }

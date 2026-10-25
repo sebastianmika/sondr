@@ -29,5 +29,14 @@ enum Theme {
         }
     }
 
+    /// A stored cluster colour, adjusted per appearance so it keeps 3:1 against the ground (see `ThemeTokens.clusterGround`).
+    static func legibleCluster(_ rgb: ClusterPalette.RGB) -> Color {
+        Color(
+            nsColor: NSColor(name: nil) { appearance in
+                let c = rgb.legible(on: ThemeTokens.clusterGround.value(for: scheme(of: appearance)))
+                return NSColor(srgbRed: CGFloat(c.red) / 255, green: CGFloat(c.green) / 255, blue: CGFloat(c.blue) / 255, alpha: 1)
+            })
+    }
+
     private static func colour(_ token: ThemeColour) -> Color { Color(nsColor: nsColour(token)) }
 }
