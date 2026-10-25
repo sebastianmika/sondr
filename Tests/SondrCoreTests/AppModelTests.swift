@@ -291,6 +291,28 @@ private struct Workspace {
     #expect(browse.rows.count == 20 && browse.total == 20)
 }
 
+@MainActor @Test func expandedGroupFlagsTheMembersThatMatchAndHighlightsOnlyThose() async throws {
+    let work = try Workspace(files: 30)
+    defer { work.remove() }
+    let app = await indexedApp(files: 30, work)
+    let database = try #require(app.database)
+    let location = try #require(app.locations.first)
+    let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY id LIMIT 4") }
+    let group = try await MultisampleGroups.create(database: database, locationID: location.id, name: "G", sampleIDs: ids)
+    let browse = BrowseModel(app: app)
+
+    browse.filter.sampleIDs = [ids[0], ids[1]]
+    await browse.settle()
+    #expect(browse.total == 1)
+    await browse.setExpanded(group, true)
+    let row = try #require(browse.rows.first)
+    let flags = Dictionary(uniqueKeysWithValues: browse.children(of: row).map { ($0.id, $0.multisample?.matches) })
+    #expect(flags.count == 3)
+    #expect(row.multisample?.groupName == "G" && row.name == "G")
+    for id in ids where id != row.id { #expect(flags[id] == [ids[0], ids[1]].contains(id)) }
+    #expect(browse.highlight == [ids[0], ids[1]])
+}
+
 @MainActor @Test func manualGroupSurvivesARescanAnIndexRunAndARegroup() async throws {
     let work = try Workspace(files: 30)
     defer { work.remove() }
