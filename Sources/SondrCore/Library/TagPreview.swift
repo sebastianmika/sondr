@@ -16,6 +16,8 @@ public struct TagPreview: Sendable {
         public let example: String
         /// The first rule that hides the tag, if any.
         public let blockedBy: TagRule?
+        /// True if the built-in ``DefaultTagRules`` hide the tag (``blockedBy`` is then `nil`).
+        public let isDefault: Bool
         /// True if ``blockedBy`` is one of the global rules.
         public let isGlobal: Bool
     }
@@ -39,12 +41,12 @@ public struct TagPreview: Sendable {
         // The walk is synchronous and can take seconds on a large folder: keep it off the caller's actor.
         let work = Task.detached(priority: .userInitiated) { () -> TagPreview in
             let files = LibraryScanner.walk(root: root, extensions: allowed)
-            let computer = try TagComputer(tagger: tagger, settings: TaggingSettings())
             var raw: [String: Raw] = [:]
             for (index, file) in files.enumerated() {
                 if index % 1000 == 0 { try Task.checkCancellation() }
                 let relative = String(file.path.dropFirst(root.path.count)).trimmingPrefix("/")
-                for tag in computer.tags(locationID: 0, rootPath: root.path, path: file.path) {
+                // Straight from the tagger: default-ignored tags stay visible, rows() marks them.
+                for tag in tagger.tags(for: root.lastPathComponent + "/" + relative) {
                     if raw[tag] == nil { raw[tag] = Raw(count: 1, example: String(relative)) } else { raw[tag]!.count += 1 }
                 }
             }
@@ -60,10 +62,12 @@ public struct TagPreview: Sendable {
         let globalSet = try TagRuleSet(global)
         let locationSet = try TagRuleSet(location)
         return raw.map { tag, item in
-            let byGlobal = globalSet.firstMatch(for: tag)
-            let blocker = byGlobal ?? locationSet.firstMatch(for: tag)
+            let isDefault = DefaultTagRules.set.blocks(tag)
+            let byGlobal = isDefault ? nil : globalSet.firstMatch(for: tag)
+            let blocker = isDefault ? nil : byGlobal ?? locationSet.firstMatch(for: tag)
             return Row(
-                tag: tag, count: item.count, example: item.example, blockedBy: blocker, isGlobal: byGlobal != nil)
+                tag: tag, count: item.count, example: item.example, blockedBy: blocker,
+                isDefault: isDefault, isGlobal: byGlobal != nil)
         }.sorted { $0.count != $1.count ? $0.count > $1.count : $0.tag < $1.tag }
     }
 

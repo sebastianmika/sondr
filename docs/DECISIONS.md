@@ -11,3 +11,9 @@
 ## Mel filter bank: HTK, not Slaney (2026-10-25)
 REQUIREMENTS §5.1 says Slaney scale and norm. That holds for `clap-htsat-unfused` (`truncation: rand_trunc`). With `clap-htsat-fused` (`truncation: fusion`) HF's `ClapFeatureExtractor` uses the `mel_filters` bank (HTK scale, no norm) for clips of at most 10 s. `MelSpectrogram.swift` uses that bank; Slaney gave a 50+ dB mismatch against the golden features. Mel parity is exactly 0.0 dB on the 5 fixtures.
 Swift end-to-end embeddings (51 files): min cosine 0.99870 (the 22.05 kHz file, resampler difference), mean 0.99997. Text min 0.9999999.
+
+## Default tag rules (2026-10-25)
+- Numbers (`01`, `12.`), number pairs (`01-02`) and note names (`f#`, `c-3`) are never tags. Built-in `DefaultTagRules`, applied in `TagComputer.tags` (the one choke point for scan, retag and remove-location); `Tagger` output and its golden test are untouched.
+- Not editable, no migration: existing libraries keep old tags until recreated (owner recreates libraries). Retag diffs would drop them for samples touched by a retag.
+- Side effect: a split `90bpm` yields `90`, which is dropped; the hyphenated `90bpm-chop-bright` stays whole.
+- The preview reads the tagger directly and marks such tags "Ignored by default" instead of hiding them.

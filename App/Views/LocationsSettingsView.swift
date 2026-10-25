@@ -332,12 +332,16 @@ struct LocationEditor: View {
             } else {
                 Table(rows) {
                     TableColumn("Tag") { row in
-                        Text(row.tag).strikethrough(row.blockedBy != nil).foregroundStyle(row.blockedBy == nil ? .primary : .secondary)
+                        let ignored = row.blockedBy != nil || row.isDefault
+                        Text(row.tag).strikethrough(ignored).foregroundStyle(ignored ? .secondary : .primary)
                     }.width(min: 90, ideal: 140)
                     TableColumn("Files") { Text($0.count.formatted()).monospacedDigit() }.width(60)
                     TableColumn("Example") { Text($0.example).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary) }
                     TableColumn("") { row in
-                        if let rule = row.blockedBy {
+                        if row.isDefault {
+                            Text("Ignored by default").font(.caption).foregroundStyle(.secondary)
+                                .help("Built-in rule: numbers, number pairs and note names are never tags")
+                        } else if let rule = row.blockedBy {
                             Text(row.isGlobal ? "Ignored for all" : "Ignored here").font(.caption).foregroundStyle(.secondary)
                                 .help("Rule: \(rule.pattern)")
                         } else {
