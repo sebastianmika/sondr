@@ -136,3 +136,13 @@ private func browse(_ database: LibraryDatabase, cluster: SampleFilter.ClusterCh
     try assign(database, [(1, 1, 0.9)])
     #expect(try browse(database, cluster: .unsorted, collapse: true).rows.map(\.filename) == ["Snare_Soft.wav"])
 }
+
+@Test func sampleIDsWithCollapseReturnsOneRowPerGroupWithAMatchingMember() throws {
+    let database = try makeLibrary()
+    var filter = SampleFilter()
+    filter.sampleIDs = [1, 2, 4, 5]  // three of the four piano members, plus Kick
+    let page = try database.writer.read { try SampleQuery.browse($0, filter: filter, collapseGroups: true) }
+    #expect(page.total == 2)
+    #expect(page.rows.map(\.filename) == ["Kick_Hard.wav", "Piano_C3.wav"])
+    #expect(page.rows.allSatisfy { filter.sampleIDs!.contains($0.id) })
+}
