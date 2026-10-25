@@ -13,7 +13,9 @@ struct SondrApp: App {
         WindowGroup("Sondr") {
             Group {
                 // Development aid: show the Settings content in the main window (see SnapshotHook).
-                if ProcessInfo.processInfo.environment["SONDR_OPEN_SETTINGS"] != nil {
+                if ProcessInfo.processInfo.environment["SONDR_SHOW_EDITOR"] != nil {
+                    EditorSnapshot()
+                } else if ProcessInfo.processInfo.environment["SONDR_OPEN_SETTINGS"] != nil {
                     SettingsView()
                 } else {
                     RootView().frame(minWidth: 960, minHeight: 560)
@@ -29,6 +31,19 @@ struct SondrApp: App {
 
         Settings {
             SettingsView().environment(model)
+        }
+    }
+}
+
+/// Development aid (`SONDR_SHOW_EDITOR=1`): the location editor for the first location, in the main window.
+private struct EditorSnapshot: View {
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        if let location = app.locations.first {
+            LocationEditor(mode: .edit(location))
+        } else {
+            ProgressView()
         }
     }
 }
