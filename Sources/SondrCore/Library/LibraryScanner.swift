@@ -306,7 +306,8 @@ public actor LibraryScanner {
         into summary: inout ScanSummary
     ) async throws {
         guard !batch.isEmpty else { return }
-        let candidates = batch
+        // shortcut: sorted per batch only, so a name clash split across two batches (>500 files) can still resolve either way; upgrade by sorting the walk before reading.
+        let candidates = batch.sorted { $0.file.path < $1.file.path }
         batch.removeAll(keepingCapacity: true)
         let pitchLabel = pitchLabel
         let counts = try await database.writer.write { db in
