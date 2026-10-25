@@ -41,24 +41,21 @@ struct SampleListView: View {
                     Text(row.name).lineLimit(1)
                     if let info = row.multisample { multisampleBadge(info, isGroupRow: isGroupRow(row)) }
                 }
+                .opacity(opacity(row))
                 .task { await browse.loadMoreIfNeeded(at: row) }
             }
             .width(min: 140, ideal: 240)
             TableColumn("Cluster") { row in
-                if let cluster = clusterOf(row) {
-                    Label(cluster.name, systemImage: "circle.fill")
-                        .labelStyle(ClusterLabelStyle(color: clusterColor(cluster.id, app.palette)))
-                } else {
-                    Text("–").foregroundStyle(.tertiary)
-                }
+                clusterCell(row).opacity(opacity(row))
             }
             .width(min: 70, ideal: 100)
             TableColumn("Tags") { row in
-                Text(row.tags.joined(separator: ", ")).foregroundStyle(.secondary).lineLimit(1)
+                Text((isGroupRow(row) ? row.multisample?.tags ?? row.tags : row.tags).joined(separator: ", "))
+                    .foregroundStyle(.secondary).lineLimit(1).opacity(opacity(row))
             }
             .width(min: 80, ideal: 180)
             TableColumn("Length", value: \.duration) { row in
-                Text(formatDuration(row.duration)).monospacedDigit()
+                Text(formatDuration(row.duration)).monospacedDigit().opacity(opacity(row))
             }
             .width(min: 50, ideal: 60, max: 80)
             TableColumn("Match") { row in
@@ -80,6 +77,8 @@ struct SampleListView: View {
                 }
             }
         }
+        // A Table whose rows switch between TableRow and DisclosureTableRow can keep stale rows; start afresh.
+        .id(browse.showsGroups)
         .contextMenu(forSelectionType: Int64.self) { ids in
             if let row = browse.rows(for: ids).first, ids.count == 1 {
                 Button("Play") { playback.play(row) }
@@ -235,7 +234,7 @@ struct SampleListView: View {
 
     @ViewBuilder private func multisampleBadge(_ info: MultisampleInfo, isGroupRow: Bool) -> some View {
         if isGroupRow {
-            Text("\(info.size) pitches \(info.lowLabel)–\(info.highLabel)")
+            Text(info.lowLabel.isEmpty ? "\(info.size) samples" : "\(info.size) pitches \(info.lowLabel)–\(info.highLabel)")
                 .font(.caption).foregroundStyle(.secondary)
                 .padding(.horizontal, 5).background(.quaternary, in: Capsule())
         } else if let label = info.pitchLabel {
@@ -243,10 +242,29 @@ struct SampleListView: View {
         }
     }
 
-    private func clusterOf(_ row: SampleRow) -> ClusterInfo? {
-        if isGroupRow(row) { return row.multisample?.clusters.first.flatMap { id in app.clusters.first { $0.id == id } } }
-        guard let id = row.clusterID, !ClusterAssigner.isUnsorted(score: row.clusterScore) else { return nil }
-        return app.clusters.first { $0.id == id }
+    /// Members of an expanded group that do not match the filter are dimmed.
+    private func opacity(_ row: SampleRow) -> Double { row.multisample?.matches == false ? 0.4 : 1 }
+
+    /// A group row shows a dot for every cluster among its members, a single sample its own cluster.
+    @ViewBuilder private func clusterCell(_ row: SampleRow) -> some View {
+        let ids: [Int] = isGroupRow(row)
+            ? row.multisample?.clusters ?? []
+            : (row.clusterID.flatMap { ClusterAssigner.isUnsorted(score: row.clusterScore) ? nil : [$0] } ?? [])
+        let found = ids.compactMap { id in app.clusters.first { $0.id == id } }
+        if found.isEmpty {
+            Text("–").foregroundStyle(.tertiary)
+        } else if found.count == 1 {
+            Label(found[0].name, systemImage: "circle.fill")
+                .labelStyle(ClusterLabelStyle(color: clusterColor(found[0].id, app.palette)))
+        } else {
+            HStack(spacing: 3) {
+                ForEach(found) { cluster in
+                    Image(systemName: "circle.fill").font(.system(size: 7))
+                        .foregroundStyle(clusterColor(cluster.id, app.palette))
+                }
+            }
+            .help(found.map(\.name).joined(separator: ", "))
+        }
     }
 
     private func move(by offset: Int) -> KeyPress.Result {
