@@ -18,7 +18,7 @@ struct SampleListView: View {
     var body: some View {
         VStack(spacing: 0) {
             if showSoundMap {
-                ExplorePanel(browse: browse)
+                ExplorePanel(browse: browse, selection: $selection)
                 Divider()
             }
             table

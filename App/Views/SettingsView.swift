@@ -27,7 +27,9 @@ struct SettingsView: View {
             LocationsSettingsView()
                 .tabItem { Label("Locations", systemImage: "folder") }
                 .tag("locations")
-            // Extension point: a "Map" tab (tag "map") is added with the explore panel.
+            MapSettingsView()
+                .tabItem { Label("Map", systemImage: "map") }
+                .tag("map")
         }
         .frame(width: 760, height: 700)
     }

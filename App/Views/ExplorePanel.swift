@@ -4,6 +4,7 @@ import SwiftUI
 /// The explore panel above the list: the sound axes or the 2D map.
 struct ExplorePanel: View {
     let browse: BrowseModel
+    @Binding var selection: Set<Int64>
     @AppStorage(Preferences.explorerTab) private var tab = "axes"
     @AppStorage(Preferences.explorerHeight) private var height = 380.0
     @State private var heightAtDragStart: Double?
@@ -22,9 +23,7 @@ struct ExplorePanel: View {
             Divider()
             Group {
                 if tab == "map" {
-                    // Extension point: replace with the map canvas when the Map module lands.
-                    Text("Map coming soon").foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    MapCanvasView(browse: browse, selection: $selection)
                 } else {
                     ParallelCoordinatesView(browse: browse)
                 }
