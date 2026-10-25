@@ -11,6 +11,7 @@ struct SidebarView: View {
     @Binding var selection: SidebarItem?
     let browse: BrowseModel
     @Binding var showingFailures: Bool
+    @State private var managingTags = false
 
     var body: some View {
         List(selection: $selection) {
@@ -34,14 +35,14 @@ struct SidebarView: View {
             if !app.tagCounts.isEmpty {
                 Section {
                     TagCloud(browse: browse)
-                    // Extension point: opens the tag manager sheet (rename, merge, delete).
-                    Button("Manage Tags…") {}.buttonStyle(.borderless).disabled(true)
+                    Button("Manage Tags…") { managingTags = true }.buttonStyle(.borderless)
                 } header: {
                     Text("Tags")
                 }
             }
         }
         .safeAreaInset(edge: .bottom) { JobsBar(showingFailures: $showingFailures) }
+        .sheet(isPresented: $managingTags) { TagManagerView() }
         .onChange(of: selection) { _, item in apply(item) }
     }
 

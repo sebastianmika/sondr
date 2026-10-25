@@ -24,7 +24,7 @@ struct SettingsView: View {
             GeneralSettingsView()
                 .tabItem { Label("General", systemImage: "gearshape") }
                 .tag("general")
-            LocationsSettingsView()  // minimal list; the full editor replaces it
+            LocationsSettingsView()
                 .tabItem { Label("Locations", systemImage: "folder") }
                 .tag("locations")
             // Extension point: a "Map" tab (tag "map") is added with the explore panel.
