@@ -7,6 +7,7 @@ struct LocationsSettingsView: View {
     @State private var importing = false
     @State private var editing: LocationEditor.Mode?
     @State private var removing: LocationInfo?
+    @State private var reviewing: LocationInfo?
 
     var body: some View {
         Form {
@@ -16,7 +17,7 @@ struct LocationsSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(app.locations) { location in
-                    LocationRow(location: location, edit: { editing = .edit(location) }, remove: { removing = location })
+                    LocationRow(location: location, edit: { editing = .edit(location) }, review: { reviewing = location }, remove: { removing = location })
                 }
                 HStack {
                     Button("Add Location…") { importing = true }.disabled(busy)
@@ -41,6 +42,7 @@ struct LocationsSettingsView: View {
         .sheet(item: $editing) { mode in
             LocationEditor(mode: mode)
         }
+        .sheet(item: $reviewing) { MultisampleEditorView(location: $0) }
         .confirmationDialog(
             "Remove “\(removing.map { URL(fileURLWithPath: $0.path).lastPathComponent } ?? "")” from the library?",
             isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
@@ -64,6 +66,7 @@ private struct LocationRow: View {
     @Environment(AppModel.self) private var app
     let location: LocationInfo
     let edit: () -> Void
+    let review: () -> Void
     let remove: () -> Void
 
     var body: some View {
@@ -83,6 +86,7 @@ private struct LocationRow: View {
             }
             HStack {
                 Button("Edit…", action: edit)
+                Button("Multisamples…", action: review)
                 Button("Rescan") { Task { await app.rescan(location) } }
                 Button("Show in Finder") {
                     NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: location.path)])
@@ -193,6 +197,7 @@ struct LocationEditor: View {
     @State private var filter = ""
     @State private var retagCount = 0
     @State private var dropRareUpTo = 1
+    @State private var reviewing = false
 
     private var tagging: LocationTagging {
         LocationTagging(
@@ -312,6 +317,9 @@ struct LocationEditor: View {
                 groupRules.overrides.append(.init(folder: "", group: !groupRules.groupByDefault))
             } label: { Label("Add Folder Exception", systemImage: "plus") }
                 .buttonStyle(.borderless)
+            if case .edit(let location) = mode {
+                Button("Review Multisamples…") { reviewing = true }.sheet(isPresented: $reviewing) { MultisampleEditorView(location: location) }
+            }
             Text("Groups are found from note names in the files (C3, F#2…) and are checked against the root note in the file or by sound. You can turn grouping off in the list's toolbar too.")
                 .font(.caption).foregroundStyle(.secondary)
         }

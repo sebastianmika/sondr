@@ -270,6 +270,22 @@ public enum SampleQuery {
         ).map(makeRow)
     }
 
+    /// Samples of a location that belong to no group and whose name contains `text`, by name.
+    public static func ungrouped(_ db: Database, locationID: Int64, matching text: String = "", limit: Int = 300) throws -> [SampleRow] {
+        let escaped = text.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "%", with: "\\%")
+            .replacingOccurrences(of: "_", with: "\\_")
+        return try Row.fetchAll(
+            db,
+            sql: """
+                SELECT \(columns()) FROM samples WHERE samples.group_id IS NULL AND samples.missing = 0
+                AND samples.id IN (SELECT sample_id FROM sample_paths WHERE location_id = ?)
+                AND COALESCE(samples.name, samples.filename) LIKE ? ESCAPE '\\'
+                ORDER BY COALESCE(samples.name, samples.filename) COLLATE NOCASE, samples.id LIMIT ?
+                """,
+            arguments: [locationID, "%" + escaped + "%", limit]
+        ).map(makeRow)
+    }
+
     /// A CTE numbering the matching samples of each group (representative first, then by pitch); samples
     /// outside any group get position 1.
     private static func firstOfGroup(_ conditions: String) -> String {
