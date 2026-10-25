@@ -413,6 +413,31 @@ public final class AppModel {
         await refresh()
     }
 
+    /// The groups of a location, by name; empty when the library cannot be read.
+    public func groups(in location: LocationInfo) async -> [MultisampleGroups.Info] {
+        guard let database else { return [] }
+        return (try? await MultisampleGroups.list(database: database, locationID: location.id)) ?? []
+    }
+
+    /// The members of a group in pitch order.
+    public func members(ofGroup groupID: Int64) async -> [SampleRow] {
+        guard let database else { return [] }
+        return (try? await database.writer.read { try SampleQuery.members($0, groupID: groupID) }) ?? []
+    }
+
+    /// Samples of a location in no group whose name contains `text`.
+    public func ungroupedSamples(in location: LocationInfo, matching text: String) async -> [SampleRow] {
+        guard let database else { return [] }
+        return (try? await database.writer.read { try SampleQuery.ungrouped($0, locationID: location.id, matching: text) }) ?? []
+    }
+
+    /// Runs one edit of ``MultisampleGroups`` and shows the result in the list; a failure becomes ``message``.
+    public func editGroups(_ edit: (LibraryDatabase) async throws -> Void) async {
+        guard let database else { return }
+        do { try await edit(database) } catch { message = error.localizedDescription }
+        await refresh()
+    }
+
     /// Finds multisample groups again in every location; see ``MultisampleGrouper``. Groups whose members
     /// are not indexed yet are picked up by the run after indexing.
     public func regroup() async {

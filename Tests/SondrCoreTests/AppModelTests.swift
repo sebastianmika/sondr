@@ -330,6 +330,26 @@ private struct Workspace {
     #expect(kept.map(\.id) == [group] && kept[0].size == 3 && kept[0].manual)
 }
 
+@MainActor @Test func editGroupsListsMembersAndUngroupedSamplesAndRefreshes() async throws {
+    let work = try Workspace(files: 30)
+    defer { work.remove() }
+    let app = await indexedApp(files: 30, work)
+    let location = try #require(app.locations.first)
+    let before = await app.ungroupedSamples(in: location, matching: "").count
+    let ids = Array(await app.ungroupedSamples(in: location, matching: "").prefix(3).map(\.id))
+
+    await app.editGroups { _ = try await MultisampleGroups.create(database: $0, locationID: location.id, name: "Mine", sampleIDs: ids) }
+
+    let groups = await app.groups(in: location)
+    #expect(groups.map(\.name) == ["Mine"] && groups[0].manual)
+    #expect(await app.members(ofGroup: groups[0].id).map(\.id).sorted() == ids.sorted())
+    #expect(await app.ungroupedSamples(in: location, matching: "").count == before - 3)
+    #expect(await app.ungroupedSamples(in: location, matching: "zzz-no-such-name").isEmpty)
+
+    await app.editGroups { try await MultisampleGroups.rename(database: $0, groupID: groups[0].id, name: "") }
+    #expect(app.message != nil)
+}
+
 @MainActor @Test func keywordAndTagFiltersNarrowTheList() async throws {
     let work = try Workspace(files: 120)
     defer { work.remove() }
