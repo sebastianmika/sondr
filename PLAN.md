@@ -19,7 +19,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Tests: every token pair meets its target (text 4.5, graphics 3); `legible` leaves good colours alone, fixes yellow on light, is idempotent. Adjust token values until green.
    - Verify: `swift test`.
 
-2. **Appearance setting and accent** (S)
+2. **Appearance setting and accent** (S) — DONE
    - `Preferences.appearance` (`system|light|dark`), picker in Settings → General, applied to `NSApp.appearance` at launch and on change. `App/Theme/Theme.swift`: dynamic `Color`s from the tokens. Root `.tint(Theme.signal)` on window and Settings.
    - Dev aid: `SONDR_APPEARANCE=light|dark` so snapshots need no system switch.
    - Verify: snapshot of main window and Settings, both values; switch while running, no restart needed.

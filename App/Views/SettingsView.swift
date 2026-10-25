@@ -10,6 +10,7 @@ enum Preferences {
     static let groupMultisamples = "groupMultisamples"
     static let explorerTab = "explorerTab"
     static let explorerHeight = "explorerHeight"
+    static let appearance = "appearance"
 
     static var savedComputeUnits: EmbeddingService.ComputeUnits {
         UserDefaults.standard.string(forKey: computeUnits).flatMap(EmbeddingService.ComputeUnits.init(rawValue:)) ?? .cpuAndGPU
@@ -46,9 +47,17 @@ private struct GeneralSettingsView: View {
     @Environment(AppModel.self) private var app
     @AppStorage(Preferences.computeUnits) private var computeUnits = EmbeddingService.ComputeUnits.cpuAndGPU.rawValue
     @AppStorage(Preferences.autoAudition) private var autoAudition = false
+    @AppStorage(Preferences.appearance) private var appearance = Appearance.system.rawValue
 
     var body: some View {
         Form {
+            Section("Appearance") {
+                Picker("Colour scheme", selection: $appearance) {
+                    ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: appearance) { _, value in Appearance(rawValue: value)?.apply() }
+            }
             Section("Library") {
                 LabeledContent("Database") {
                     HStack {
