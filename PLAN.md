@@ -24,7 +24,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Dev aid: `SONDR_APPEARANCE=light|dark` so snapshots need no system switch.
    - Verify: snapshot of main window and Settings, both values; switch while running, no restart needed.
 
-3. **Fonts** (S)
+3. **Fonts** (S) — DONE
    - Bundle IBM Plex Mono 400/500/600 + OFL text under `App/Fonts/`, register at launch, `Font.sondrMono(size:weight:)`, caps-label modifier.
    - Verify: snapshot shows Plex (not the fallback); check the font name resolves in a unit-free launch log.
 

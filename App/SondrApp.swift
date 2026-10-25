@@ -6,6 +6,7 @@ struct SondrApp: App {
     @State private var model = AppModel(computeUnits: Preferences.savedComputeUnits)
 
     init() {
+        ThemeFonts.register()
         Appearance.saved.apply()
         SnapshotHook.installIfRequested()
     }

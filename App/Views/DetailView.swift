@@ -205,7 +205,7 @@ struct SoundTile: View {
             ForEach([(100.0, "100"), (1000, "1k"), (10_000, "10k")], id: \.0) { hz, label in
                 let y = proxy.size.height * (1 - SpectrogramThumbnail.axisPosition(forFrequency: hz))
                 HStack(spacing: 3) {
-                    Text(label).font(.system(size: 9, design: .monospaced))
+                    Text(label).font(.sondrMono(size: 9))
                     Rectangle().frame(width: 5, height: 0.5)
                 }
                 .foregroundStyle(.secondary)
@@ -222,7 +222,7 @@ struct SoundTile: View {
             Spacer()
             Text(String(format: "%.1f s", min(max(duration, 1), 10)))
         }
-        .font(.system(size: 9, design: .monospaced))
+        .font(.sondrMono(size: 9))
         .foregroundStyle(.secondary)
     }
 
