@@ -1,0 +1,343 @@
+import Foundation
+import GRDB
+import Observation
+
+public enum StartupState: Equatable, Sendable {
+    case loading
+    case ready
+    case failed(String)
+}
+
+public struct ScanStatus: Equatable, Sendable {
+    public var location: String
+    public var progress: ScanProgress?
+}
+
+/// State of the whole app: the open library, running jobs and the numbers the sidebar shows.
+/// Views read it; its methods are the only things that start jobs or change the library.
+@MainActor
+@Observable
+public final class AppModel {
+    public private(set) var startup = StartupState.loading
+    public private(set) var stats = LibraryStats()
+    public private(set) var locations: [LocationInfo] = []
+    public private(set) var clusters: [ClusterInfo] = []
+    public private(set) var unsortedCount = 0
+    public private(set) var tagCounts: [TagCount] = []
+    /// False if the Core ML models were not found: browsing and scanning still work.
+    public private(set) var modelsAvailable = false
+    public private(set) var scanStatus: ScanStatus?
+    /// Set while a change of tag settings is being applied to the samples.
+    public private(set) var retagProgress: RetagProgress?
+    /// Blacklist for the tags of all locations.
+    public private(set) var globalTagRules: [TagRule] = []
+    public private(set) var indexProgress: IndexProgress?
+    public private(set) var lastScanSummary: ScanSummary?
+    public private(set) var lastIndexSummary: IndexSummary?
+    /// Bumped whenever the set of samples may have changed, so lists reload.
+    public private(set) var libraryVersion = 0
+    public var message: String?
+
+    public private(set) var database: LibraryDatabase?
+    public let vectorIndex = VectorIndex()
+    public private(set) var search: SearchService?
+    public private(set) var embedder: (any Embedder)?
+    private var indexRun: IndexRun?
+
+    private let databaseURL: URL
+    public let modelsDirectory: URL?
+    public var databasePath: String { databaseURL.path }
+
+    /// - Parameters:
+    ///   - databaseURL: Library file; default ``LibraryDatabase/defaultURL()``.
+    ///   - modelsDirectory: Models folder; default ``ModelLocator/find(environment:bundle:)``.
+    ///   - embedder: Replaces the Core ML embedder (tests).
+    ///   - computeUnits: Hardware for the Core ML models.
+    public init(
+        databaseURL: URL = LibraryDatabase.defaultURL(), modelsDirectory: URL? = ModelLocator.find(),
+        embedder: (any Embedder)? = nil, computeUnits: EmbeddingService.ComputeUnits = .cpuAndGPU
+    ) {
+        self.databaseURL = databaseURL
+        self.modelsDirectory = modelsDirectory
+        self.embedder = embedder ?? modelsDirectory.map { EmbeddingService(modelsDirectory: $0, computeUnits: computeUnits) }
+        modelsAvailable = self.embedder != nil
+    }
+
+    public var isScanning: Bool { scanStatus != nil }
+    public var isIndexing: Bool { indexProgress != nil }
+    public var isRetagging: Bool { retagProgress != nil }
+
+    // MARK: Startup
+
+    public func start() async {
+        guard startup == .loading else { return }
+        do {
+            let database = try LibraryDatabase(url: databaseURL)
+            self.database = database
+            _ = try await Reconciliation.run(database: database)
+            try await vectorIndex.load(from: database)
+            if let embedder {
+                search = SearchService(database: database, index: vectorIndex, embedder: embedder)
+            }
+            await refresh()
+            await finishPendingRetag()
+            startup = .ready
+        } catch {
+            startup = .failed(error.localizedDescription)
+        }
+    }
+
+    /// Reloads the numbers shown in the sidebar and (unless `reloadLists` is false) tells lists to reload.
+    public func refresh(reloadLists: Bool = true) async {
+        guard let database else { return }
+        do {
+            let (stats, locations, clusterInfo, tags, globalRules) = try await database.writer.read { db in
+                (
+                    try LibraryInfo.stats(db), try LibraryInfo.locations(db), try LibraryInfo.clusters(db),
+                    try SampleQuery.tagCounts(db, limit: 200), try TaggingStore.load(db).global
+                )
+            }
+            globalTagRules = globalRules
+            self.stats = stats
+            self.locations = locations
+            clusters = clusterInfo.clusters
+            unsortedCount = clusterInfo.unsorted
+            tagCounts = tags
+            if reloadLists { libraryVersion += 1 }
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    // MARK: Locations and scanning
+
+    /// Adds a folder to the library and scans it. `tagging` (extra tags and blacklist) is stored on the
+    /// location and applies to every sample found in it.
+    ///
+    /// With `dropRareTagsUpTo`, the new samples' auto tags used by that many samples or fewer, or by under 1% of
+    /// them, are removed.
+    public func addLocation(
+        _ url: URL, tagging: LocationTagging? = nil, multisampleRules: MultisampleRules? = nil,
+        dropRareTagsUpTo: Int? = nil
+    ) async {
+        await scan(
+            url, extensions: nil, maxLength: nil, tagging: tagging, multisampleRules: multisampleRules,
+            dropRareTagsUpTo: dropRareTagsUpTo)
+    }
+
+    /// Scans every known location again, one after the other.
+    public func rescanAll() async {
+        for location in locations { await rescan(location) }
+    }
+
+    /// What adding `url` with these settings would tag; see ``TagPreview``.
+    public func previewTags(of url: URL) async throws -> TagPreview {
+        try await TagPreview.scan(root: url, tagger: Tagger.bundled())
+    }
+
+    /// Scans a known location again with the settings it was added with.
+    public func rescan(_ location: LocationInfo) async {
+        let extensions = location.typeFilter.map { Set($0.split(separator: ",").map(String.init)) }
+        await scan(URL(fileURLWithPath: location.path), extensions: extensions, maxLength: location.maxLength)
+    }
+
+    private func scan(_ url: URL, extensions: Set<String>?, maxLength: Double?, tagging: LocationTagging? = nil,
+        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil) async {
+        guard let database, !isScanning, !isIndexing, !isRetagging else { return }
+        scanStatus = ScanStatus(location: url.path, progress: nil)
+        defer { scanStatus = nil }
+        do {
+            let scanner = try LibraryScanner(database: database)
+            let summary = try await scanner.scan(root: url, extensions: extensions, maxLength: maxLength, tagging: tagging, multisampleRules: multisampleRules, dropRareTagsUpTo: dropRareTagsUpTo) { [weak self] progress in
+                Task { @MainActor [weak self] in self?.scanStatus?.progress = progress }
+            }
+            lastScanSummary = summary
+            try await vectorIndex.load(from: database)  // files that vanished leave the index
+            await regroup()
+            message = "Scanned \(url.lastPathComponent): \(summary.new) new, \(summary.duplicate) duplicates, \(summary.errors) unreadable."
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh()
+    }
+
+    /// Removes a location from the library. Audio files are not touched.
+    public func removeLocation(_ location: LocationInfo) async {
+        guard let database, !isScanning, !isIndexing, !isRetagging else { return }
+        do {
+            let removed = try await database.writer.write { try LibraryInfo.removeLocation($0, id: location.id) }
+            for id in removed { await vectorIndex.remove(id: id) }
+            message = "Removed \(location.path) and \(removed.count) samples."
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh()
+    }
+
+    // MARK: Tag settings
+
+    /// How many samples a change of this location's tag settings would retag.
+    public func retagCount(for location: LocationInfo, new: LocationTagging) async -> Int {
+        guard let database else { return 0 }
+        return (try? await database.writer.read { db -> Int in
+            let old = try TaggingStore.load(db)
+            var changed = old
+            changed.locations[location.id] = LocationTagging(
+                extraTags: TaggingStore.normalised(new.extraTags), rules: new.rules)
+            return try TagRetag.affectedSampleIDs(db, old: old, new: changed).count
+        }) ?? 0
+    }
+
+    /// How many samples a change of the global blacklist would retag.
+    public func retagCount(globalRules: [TagRule]) async -> Int {
+        guard let database else { return 0 }
+        return (try? await database.writer.read { db -> Int in
+            let old = try TaggingStore.load(db)
+            var changed = old
+            changed.global = globalRules
+            return try TagRetag.affectedSampleIDs(db, old: old, new: changed).count
+        }) ?? 0
+    }
+
+    /// Saves new tag settings for a location and retags the samples that are affected.
+    public func updateLocation(_ location: LocationInfo, tagging: LocationTagging) async {
+        await changeTagSettings { settings in settings.locations[location.id] = tagging }
+    }
+
+    /// Saves the global blacklist and retags all samples.
+    public func updateGlobalRules(_ rules: [TagRule]) async {
+        await changeTagSettings { $0.global = rules }
+    }
+
+    private func changeTagSettings(_ change: @escaping @Sendable (inout TaggingSettings) -> Void) async {
+        guard let database, !isScanning, !isRetagging else { return }
+        do {
+            try await database.writer.write { db in
+                let old = try TaggingStore.load(db)
+                var new = old
+                change(&new)
+                try TagRetagJob.commit(db, old: old, new: new)
+            }
+        } catch {
+            message = error.localizedDescription
+            return
+        }
+        await finishPendingRetag()
+    }
+
+    /// Applies a committed but unfinished change of tag settings (also after the app was quit).
+    private func finishPendingRetag() async {
+        guard let database, !isRetagging,
+            (try? await database.writer.read { try TagRetagJob.hasPending($0) }) == true
+        else { return }
+        retagProgress = RetagProgress(total: 0, done: 0)
+        defer { retagProgress = nil }
+        do {
+            let run = try TagRetagJob.start(database: database, tagger: Tagger.bundled())
+            for await progress in run.progress { retagProgress = progress }
+            let summary = try await run.result()
+            message = summary.cancelled ? "Retagging stopped." : "Retagged \(summary.samples) samples."
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh()
+    }
+
+    // MARK: Tags
+
+    /// Adds a manual tag to the samples (one transaction).
+    public func addTag(_ name: String, to ids: [Int64]) async {
+        await editTags { try LibraryTags.add($0, sampleIDs: ids, name: name) }
+    }
+
+    public func removeTag(_ name: String, from ids: [Int64]) async {
+        await editTags { try LibraryTags.remove($0, sampleIDs: ids, name: name) }
+    }
+
+    /// Renames a tag; if the new name exists, the message says to merge instead.
+    public func renameTag(_ old: String, to new: String) async {
+        await editTags { try LibraryTags.rename($0, from: old, to: new) }
+    }
+
+    public func mergeTag(_ source: String, into target: String) async {
+        await editTags { try LibraryTags.merge($0, source: source, into: target) }
+    }
+
+    public func deleteTag(_ name: String) async {
+        await editTags { try LibraryTags.delete($0, name: name) }
+    }
+
+    /// Every tag with its use count, most used first (for the tag manager).
+    public func allTags() async -> [TagCount] {
+        guard let database else { return [] }
+        return (try? await database.writer.read { try SampleQuery.tagCounts($0, limit: 1_000_000) }) ?? []
+    }
+
+    private func editTags(_ edit: @escaping @Sendable (Database) throws -> Void) async {
+        guard let database else { return }
+        do {
+            try await database.writer.write { try edit($0) }
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh()
+    }
+
+    // MARK: Indexing
+
+    public func startIndexing(retryFailed: Bool = false) async {
+        guard let database, let embedder, !isIndexing else {
+            if embedder == nil { message = "The Core ML models were not found. See the README for how to build them." }
+            return
+        }
+        do {
+            let run = try IndexJob.start(
+                database: database, embedder: embedder, retryFailed: retryFailed, vectorIndex: vectorIndex)
+            indexRun = run
+            indexProgress = IndexProgress(total: 0, done: 0, failed: 0)
+            for await progress in run.progress {
+                indexProgress = progress
+                if progress.done % 256 == 0 { await refresh(reloadLists: false) }
+            }
+            let summary = try await run.result()
+            lastIndexSummary = summary
+            message = summary.cancelled
+                ? "Indexing stopped: \(summary.done) done."
+                : "Indexed \(summary.done) samples, \(summary.failed) failed."
+                    + (summary.backfilled > 0 ? " Added spectrograms to \(summary.backfilled)." : "")
+        } catch {
+            message = error.localizedDescription
+        }
+        indexRun = nil
+        indexProgress = nil
+        await refresh()
+    }
+
+    public func cancelIndexing() { indexRun?.cancel() }
+
+    // MARK: Multisamples
+
+    /// Saves which folders of a location may form multisamples and groups that location again.
+    public func updateMultisampleRules(_ location: LocationInfo, rules: MultisampleRules) async {
+        guard let database else { return }
+        do {
+            try await database.writer.write { try MultisampleStore.save($0, locationID: location.id, rules) }
+            try await MultisampleGrouper.rebuild(database: database, locationID: location.id)
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh()
+    }
+
+    /// Finds multisample groups again in every location; see ``MultisampleGrouper``. Groups whose members
+    /// are not indexed yet are picked up by the run after indexing.
+    public func regroup() async {
+        guard let database else { return }
+        do {
+            let ids = try await database.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM locations") }
+            for id in ids { try await MultisampleGrouper.rebuild(database: database, locationID: id) }
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+}
