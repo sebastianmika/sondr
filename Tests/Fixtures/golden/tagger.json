@@ -1,0 +1,1921 @@
+[
+ {
+  "path": "/Samples/Drums/Kicks/Kick_01.wav",
+  "tags": [
+   "01",
+   "drum",
+   "kick"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Kicks/BassDrum_Heavy.wav",
+  "tags": [
+   "bass",
+   "drum",
+   "heavy",
+   "kick"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Hats/Hi-Hat_Closed_03.wav",
+  "tags": [
+   "03",
+   "closed",
+   "drum",
+   "hat",
+   "hi-hat"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Hats/hihat open 2.wav",
+  "tags": [
+   "drum",
+   "hat",
+   "hi-hat",
+   "open"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Hats/HH_OH_128.wav",
+  "tags": [
+   "128",
+   "drum",
+   "hat",
+   "hi-hat",
+   "open hi-hat"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Snares/SD_tight_snr.wav",
+  "tags": [
+   "drum",
+   "snare",
+   "tight"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Claps/clp-wide.aif",
+  "tags": [
+   "clap",
+   "clp-wide",
+   "drum"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Percussion/Perc_Rim_01.flac",
+  "tags": [
+   "01",
+   "drum",
+   "percussion",
+   "rimshot"
+  ]
+ },
+ {
+  "path": "/Samples/Synth/Leads/SynthLead_Saw_C3.wav",
+  "tags": [
+   "lead",
+   "saw",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Synth/Pads/WarmPad_Am7.wav",
+  "tags": [
+   "am",
+   "pad",
+   "synthesizer",
+   "warm"
+  ]
+ },
+ {
+  "path": "/Samples/Synth/Bass/808_Sub_Bass_F1.wav",
+  "tags": [
+   "808",
+   "bass",
+   "sub",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Vocals/Vox/VoxChop_Female_Ah.wav",
+  "tags": [
+   "ah",
+   "chop",
+   "female",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/FX/Risers/riser_8bars_fx.wav",
+  "tags": [
+   "bar",
+   "effect",
+   "riser"
+  ]
+ },
+ {
+  "path": "/Samples/FX/Impacts/Impacts_Big_Boom.wav",
+  "tags": [
+   "big",
+   "boom",
+   "effect",
+   "impact"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Drum Loops/DrumLoop_120bpm_Dm.wav",
+  "tags": [
+   "120",
+   "bpm",
+   "dm",
+   "drum",
+   "loop"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Guitar/gtr_clean_arp_90.wav",
+  "tags": [
+   "90",
+   "arpeggio",
+   "clean",
+   "guitar",
+   "loop"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Keys/Keys_Piano_Chords_pno.wav",
+  "tags": [
+   "chord",
+   "keyboard",
+   "loop",
+   "piano"
+  ]
+ },
+ {
+  "path": "/Samples/Cymbals/Crash Cymbals/crash01.wav",
+  "tags": [
+   "01",
+   "crash",
+   "cymbal"
+  ]
+ },
+ {
+  "path": "/Samples/Cymbals/cym_ride_bell.wav",
+  "tags": [
+   "bell",
+   "cymbal",
+   "ride"
+  ]
+ },
+ {
+  "path": "/Samples/Atmospheres/atm_Dark_Texture.wav",
+  "tags": [
+   "atmosphere",
+   "dark",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Volumes/Audio/Packs/Vol 2/Kits/Trap Kit/trap_kick_hard.wav",
+  "tags": [
+   "hard",
+   "kick",
+   "trap"
+  ]
+ },
+ {
+  "path": "/Volumes/Audio/Packs/New Samples Pack/Sounds/sound_effects_01.wav",
+  "tags": [
+   "01",
+   "effect"
+  ]
+ },
+ {
+  "path": "/Users/me/Music/Loopmasters/Techno Toolkit/Percussion Loops/PercLoop12.wav",
+  "tags": [
+   "12",
+   "loop",
+   "loopmaster",
+   "me",
+   "music",
+   "percussion",
+   "techno",
+   "toolkit",
+   "user"
+  ]
+ },
+ {
+  "path": "/a/b/c.wav",
+  "tags": []
+ },
+ {
+  "path": "/x/UPPER_CASE_NAME.WAV",
+  "tags": [
+   "case",
+   "name",
+   "upper"
+  ]
+ },
+ {
+  "path": "/x/camelCaseFileName.wav",
+  "tags": [
+   "camel",
+   "case",
+   "name"
+  ]
+ },
+ {
+  "path": "/x/snake_case_name_v2.wav",
+  "tags": [
+   "case",
+   "name",
+   "snake"
+  ]
+ },
+ {
+  "path": "/x/with-hyphen/multi-word-name_01.wav",
+  "tags": [
+   "01",
+   "multi-word-name",
+   "with-hyphen"
+  ]
+ },
+ {
+  "path": "/x/digits123abc456/file99.wav",
+  "tags": [
+   "123",
+   "456",
+   "99",
+   "abc",
+   "digit"
+  ]
+ },
+ {
+  "path": "/x/a/i/o.wav",
+  "tags": []
+ },
+ {
+  "path": "/x/Kicks/Kicks.wav",
+  "tags": [
+   "kick"
+  ]
+ },
+ {
+  "path": "/x/Snares/snares and claps.wav",
+  "tags": [
+   "and",
+   "clap",
+   "snare"
+  ]
+ },
+ {
+  "path": "/x/boxes/glasses/buses.wav",
+  "tags": [
+   "box",
+   "bus",
+   "glass"
+  ]
+ },
+ {
+  "path": "/x/Bass/bass_bass_bass.wav",
+  "tags": [
+   "bass"
+  ]
+ },
+ {
+  "path": "/x/Basses/bass.wav",
+  "tags": [
+   "bass"
+  ]
+ },
+ {
+  "path": "/x/ünïcode/Café_Ambience.wav",
+  "tags": [
+   "ambience",
+   "café",
+   "ünïcode"
+  ]
+ },
+ {
+  "path": "/x/dots.in.name/file.v1.2.wav",
+  "tags": [
+   "1.2",
+   "dots.in.name",
+   "file.v"
+  ]
+ },
+ {
+  "path": "/x/.hidden/sample.wav",
+  "tags": [
+   ".hidden"
+  ]
+ },
+ {
+  "path": "/x/spaces in dir/and in name.wav",
+  "tags": [
+   "and",
+   "dir",
+   "in",
+   "name",
+   "space"
+  ]
+ },
+ {
+  "path": "relative/path/Kick_01.wav",
+  "tags": [
+   "01",
+   "kick",
+   "path",
+   "relative"
+  ]
+ },
+ {
+  "path": "single_file_kick.wav",
+  "tags": [
+   "kick",
+   "single"
+  ]
+ },
+ {
+  "path": "/Samples/Leads/Bass/Claps/Dry.wav",
+  "tags": [
+   "bass",
+   "clap",
+   "dry",
+   "lead"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Snares/sdbassfx.flac",
+  "tags": [
+   "beat",
+   "break",
+   "sdbassfx",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Vocals/Drums/90bpm-chop-Bright.wav",
+  "tags": [
+   "90",
+   "90bpm-chop-bright",
+   "bass",
+   "bpm-chop-bright",
+   "drum",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Textures/Claps/90bpm Cm.flac",
+  "tags": [
+   "90",
+   "bpm",
+   "clap",
+   "cm",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Textures/Claps/Leads/Am.mp3",
+  "tags": [
+   "am",
+   "clap",
+   "lead",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Vocals/Leads/crash clap kick.flac",
+  "tags": [
+   "bass",
+   "clap",
+   "crash",
+   "kick",
+   "lead",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Synths/Claps/808.mp3",
+  "tags": [
+   "808",
+   "clap",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Hats/02_rim.wav",
+  "tags": [
+   "02",
+   "hat",
+   "rimshot",
+   "techno",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/Textures/Bright.aif",
+  "tags": [
+   "bright",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/One Shots/FX/Textures/clap-120.aif",
+  "tags": [
+   "cinematic",
+   "clap-120",
+   "effect",
+   "one",
+   "shot",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/Loops/Hit fx.flac",
+  "tags": [
+   "effect",
+   "hit",
+   "loop",
+   "one",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/Foley/FX/tom-fx.wav",
+  "tags": [
+   "effect",
+   "foley",
+   "tom-fx"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/shakerF#Dry120.wav",
+  "tags": [
+   "120",
+   "f#dry",
+   "percussion",
+   "shaker"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Leads/Longcrash.wav",
+  "tags": [
+   "house-essential",
+   "lead",
+   "longcrash"
+  ]
+ },
+ {
+  "path": "/Samples/Textures/01Cmfxsnare.aif",
+  "tags": [
+   "01",
+   "cmfxsnare",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/LoFi_Dreams/FX/Foley/chop-clap.flac",
+  "tags": [
+   "chop-clap",
+   "dream",
+   "effect",
+   "fi",
+   "foley",
+   "lo"
+  ]
+ },
+ {
+  "path": "/Samples/Synths/Hats/One Shots/01Clean.flac",
+  "tags": [
+   "01",
+   "clean",
+   "hat",
+   "one",
+   "shot",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/FX/Vocals/Hats/Short snare 90bpm.mp3",
+  "tags": [
+   "90",
+   "bpm",
+   "effect",
+   "hat",
+   "short",
+   "snare",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Snares/Textures/Dry.aif",
+  "tags": [
+   "808",
+   "dry",
+   "snare",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Textures/Foley/Hard-hihat.flac",
+  "tags": [
+   "foley",
+   "hard-hihat",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Synths/Dark.aif",
+  "tags": [
+   "dark",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Snares/Vocals/Kicks/perc.flac",
+  "tags": [
+   "kick",
+   "percussion",
+   "snare",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Loops/Foley/808leadpadShort.flac",
+  "tags": [
+   "808",
+   "foley",
+   "leadpad",
+   "loop",
+   "short"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/FX/Foley/sd_final_impact_120.wav",
+  "tags": [
+   "120",
+   "effect",
+   "foley",
+   "impact",
+   "snare",
+   "techno",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/Snares/Kicks/Dry-crash-Hit-stab.wav",
+  "tags": [
+   "dry-crash-hit-stab",
+   "kick",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Foley/Textures/shakerHitPunchy.flac",
+  "tags": [
+   "foley",
+   "hit",
+   "punchy",
+   "shaker",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/One Shots/Hit fx.flac",
+  "tags": [
+   "effect",
+   "hit",
+   "one",
+   "percussion",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/Synths/Vocals/Loops/Clean_snare_02_crash.wav",
+  "tags": [
+   "02",
+   "clean",
+   "crash",
+   "loop",
+   "snare",
+   "synthesizer",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Kicks/bd.wav",
+  "tags": [
+   "kick"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Bass/Vocals/sd Long snare.flac",
+  "tags": [
+   "bass",
+   "beat",
+   "break",
+   "long",
+   "snare",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/One Shots/Kicks/shaker.mp3",
+  "tags": [
+   "kick",
+   "one",
+   "percussion",
+   "shaker",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/trapKit2/Claps/stab tom impact hh.aif",
+  "tags": [
+   "clap",
+   "hi-hat",
+   "impact",
+   "stab",
+   "tom",
+   "trap"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Synths/Vocals/tomstab.wav",
+  "tags": [
+   "house-essential",
+   "synthesizer",
+   "tomstab",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Loops/FX/snare.mp3",
+  "tags": [
+   "808",
+   "effect",
+   "loop",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/trapKit2/Synths/Bass/Leads/Punchy_02_Hit.flac",
+  "tags": [
+   "02",
+   "bass",
+   "hit",
+   "lead",
+   "punchy",
+   "synthesizer",
+   "trap"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/Textures/One Shots/tom.aif",
+  "tags": [
+   "one",
+   "percussion",
+   "shot",
+   "texture",
+   "tom"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Drums/bd_Hit_Dark.flac",
+  "tags": [
+   "dark",
+   "drum",
+   "hit",
+   "kick"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Foley/Hats/Drums/Wet-ride-fx.flac",
+  "tags": [
+   "beat",
+   "break",
+   "drum",
+   "foley",
+   "hat",
+   "wet-ride-fx"
+  ]
+ },
+ {
+  "path": "/Samples/LoFi_Dreams/Vocals/One Shots/Pads/riser-perc.mp3",
+  "tags": [
+   "dream",
+   "fi",
+   "lo",
+   "one",
+   "pad",
+   "riser-perc",
+   "shot",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Claps/Bass/ride_hihat.aif",
+  "tags": [
+   "2020",
+   "analog",
+   "bass",
+   "clap",
+   "drum",
+   "hi-hat",
+   "ride"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Leads/loop-Bright.mp3",
+  "tags": [
+   "cinematic",
+   "effect",
+   "lead",
+   "loop-bright"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Snares/kickSoft.mp3",
+  "tags": [
+   "beat",
+   "break",
+   "kick",
+   "snare",
+   "soft"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Kicks/Textures/shaker.wav",
+  "tags": [
+   "house-essential",
+   "kick",
+   "shaker",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Vocals/Leads/riser-chop.wav",
+  "tags": [
+   "cinematic",
+   "effect",
+   "lead",
+   "riser-chop",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Vocals/Pads/One Shots/Soft.mp3",
+  "tags": [
+   "one",
+   "pad",
+   "shot",
+   "soft",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Synths/Drums/Snares/Punchy-02-120.mp3",
+  "tags": [
+   "2020",
+   "analog",
+   "drum",
+   "punchy-02-120",
+   "snare",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Loops/Foley/120 Distorted.aif",
+  "tags": [
+   "120",
+   "distorted",
+   "foley",
+   "house-essential",
+   "loop"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/One Shots/bd_01_stab_kick.wav",
+  "tags": [
+   "01",
+   "kick",
+   "one",
+   "shot",
+   "stab"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Foley/rim.aif",
+  "tags": [
+   "808",
+   "foley",
+   "rimshot"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/FX/Claps/v2PunchysdClean.wav",
+  "tags": [
+   "clap",
+   "clean",
+   "effect",
+   "one",
+   "punchysd",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Percussion/sfx pad 90bpm Warm.flac",
+  "tags": [
+   "808",
+   "90",
+   "bpm",
+   "effect",
+   "pad",
+   "percussion",
+   "warm"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/FX/Percussion/chop.flac",
+  "tags": [
+   "chop",
+   "effect",
+   "house-essential",
+   "percussion"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Bass/chop-sd-stab.mp3",
+  "tags": [
+   "bass",
+   "chop-sd-stab"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/Synths/Vocals/sfx.aif",
+  "tags": [
+   "effect",
+   "one",
+   "shot",
+   "synthesizer",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/trapKit2/One Shots/Drums/Long pad.aif",
+  "tags": [
+   "drum",
+   "long",
+   "one",
+   "pad",
+   "shot",
+   "trap"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/hh tom.mp3",
+  "tags": [
+   "hi-hat",
+   "percussion",
+   "tom"
+  ]
+ },
+ {
+  "path": "/Samples/Vocals/Foley/Hit.wav",
+  "tags": [
+   "foley",
+   "hit",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Claps/Snares/bass rim 90bpm loop.aif",
+  "tags": [
+   "90",
+   "bass",
+   "bpm",
+   "clap",
+   "loop",
+   "rimshot",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Hats/sd_Bright_pluck.mp3",
+  "tags": [
+   "bright",
+   "hat",
+   "pluck",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/trapKit2/FX/Vocals/Short.mp3",
+  "tags": [
+   "effect",
+   "short",
+   "trap",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Percussion/Soft.aif",
+  "tags": [
+   "house-essential",
+   "percussion",
+   "soft"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/kick_808_Hard.wav",
+  "tags": [
+   "808",
+   "drum",
+   "hard",
+   "kick"
+  ]
+ },
+ {
+  "path": "/Samples/Textures/Foley/sd Soft 01.aif",
+  "tags": [
+   "01",
+   "foley",
+   "snare",
+   "soft",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Snares/One Shots/Claps/Clean.mp3",
+  "tags": [
+   "2020",
+   "analog",
+   "clap",
+   "clean",
+   "drum",
+   "one",
+   "shot",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Claps/Bass/Synths/ride-90bpm.flac",
+  "tags": [
+   "bass",
+   "bpm",
+   "clap",
+   "house-essential",
+   "ride-90",
+   "ride-90bpm",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/Leads/Textures/rim.aif",
+  "tags": [
+   "lead",
+   "percussion",
+   "rimshot",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Hats/Snares/Cm Punchy Dry.wav",
+  "tags": [
+   "cinematic",
+   "cm",
+   "dry",
+   "effect",
+   "hat",
+   "punchy",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Hats/stab_02.flac",
+  "tags": [
+   "02",
+   "2020",
+   "analog",
+   "drum",
+   "hat",
+   "stab"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Textures/sd-final-Wet.wav",
+  "tags": [
+   "808",
+   "sd-final-wet",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Claps/hihat_tom_Hard.mp3",
+  "tags": [
+   "2020",
+   "analog",
+   "clap",
+   "drum",
+   "hard",
+   "hi-hat",
+   "tom"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Bass/rim.flac",
+  "tags": [
+   "bass",
+   "rimshot",
+   "techno",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/Textures/Vocals/One Shots/leadhihatWarmstab.aif",
+  "tags": [
+   "leadhihat",
+   "one",
+   "shot",
+   "texture",
+   "vocal",
+   "warmstab"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Kicks/Textures/FX/bd-kick.flac",
+  "tags": [
+   "2020",
+   "analog",
+   "bd-kick",
+   "drum",
+   "effect",
+   "kick",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Textures/Snares/Foley/bassDistortedAm.aif",
+  "tags": [
+   "am",
+   "bass",
+   "distorted",
+   "foley",
+   "snare",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Leads/FX/Hats/bd Hit.flac",
+  "tags": [
+   "808",
+   "effect",
+   "hat",
+   "hit",
+   "kick",
+   "lead"
+  ]
+ },
+ {
+  "path": "/Samples/LoFi_Dreams/FX/One Shots/Kicks/Long-rim.wav",
+  "tags": [
+   "dream",
+   "effect",
+   "fi",
+   "kick",
+   "lo",
+   "long-rim",
+   "one",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Bass/Leads/Claps/02.flac",
+  "tags": [
+   "02",
+   "bass",
+   "cinematic",
+   "clap",
+   "effect",
+   "lead"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Short_bd.aif",
+  "tags": [
+   "kick",
+   "loop",
+   "short"
+  ]
+ },
+ {
+  "path": "/Samples/LoFi_Dreams/Snares/DarkclapSoft02.mp3",
+  "tags": [
+   "02",
+   "darkclap",
+   "dream",
+   "fi",
+   "lo",
+   "snare",
+   "soft"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Percussion/Synths/Foley/bd.flac",
+  "tags": [
+   "foley",
+   "house-essential",
+   "kick",
+   "percussion",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Vocals/v2 ride.aif",
+  "tags": [
+   "drum",
+   "ride",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Synths/final lead.wav",
+  "tags": [
+   "lead",
+   "loop",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Drums/FX/90bpm clap Dry.aif",
+  "tags": [
+   "90",
+   "bpm",
+   "clap",
+   "drum",
+   "dry",
+   "effect",
+   "loop"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/FX/final_hihat.mp3",
+  "tags": [
+   "808",
+   "effect",
+   "hi-hat"
+  ]
+ },
+ {
+  "path": "/Samples/Pads/Drums/Cm-bass.aif",
+  "tags": [
+   "cm-bass",
+   "drum",
+   "pad"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Percussion/Clean final.aif",
+  "tags": [
+   "cinematic",
+   "clean",
+   "effect",
+   "percussion"
+  ]
+ },
+ {
+  "path": "/Samples/Drums/Pads/Percussion/Dry pluck crash.mp3",
+  "tags": [
+   "crash",
+   "drum",
+   "dry",
+   "pad",
+   "percussion",
+   "pluck"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Percussion/808 shaker Cm.mp3",
+  "tags": [
+   "808",
+   "cm",
+   "percussion",
+   "shaker",
+   "techno",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Hats/Leads/crash.mp3",
+  "tags": [
+   "crash",
+   "hat",
+   "lead"
+  ]
+ },
+ {
+  "path": "/Samples/trapKit2/Bass/Percussion/bass_Dark.aif",
+  "tags": [
+   "bass",
+   "dark",
+   "percussion",
+   "trap"
+  ]
+ },
+ {
+  "path": "/Samples/Kicks/One Shots/Vocals/riserWarm808F#.wav",
+  "tags": [
+   "808",
+   "f#",
+   "kick",
+   "one",
+   "riser",
+   "shot",
+   "vocal",
+   "warm"
+  ]
+ },
+ {
+  "path": "/Samples/Vocals/Kicks/Clean_shaker_Warm.mp3",
+  "tags": [
+   "clean",
+   "kick",
+   "shaker",
+   "vocal",
+   "warm"
+  ]
+ },
+ {
+  "path": "/Samples/Kicks/Drums/One Shots/hh_Dry.mp3",
+  "tags": [
+   "drum",
+   "dry",
+   "hi-hat",
+   "kick",
+   "one",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Pads/One Shots/Bass/Dark 808 clap.mp3",
+  "tags": [
+   "808",
+   "bass",
+   "clap",
+   "dark",
+   "house-essential",
+   "one",
+   "pad",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/Snares/Vocals/Textures/Bright_kick_stab_vox.flac",
+  "tags": [
+   "bright",
+   "kick",
+   "snare",
+   "stab",
+   "texture",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/pluck-tom-clap-Warm.aif",
+  "tags": [
+   "bass",
+   "pluck-tom-clap-warm"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Textures/Am.flac",
+  "tags": [
+   "am",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Snares/lead.flac",
+  "tags": [
+   "lead",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Claps/Short F# chop.aif",
+  "tags": [
+   "chop",
+   "clap",
+   "f#",
+   "short"
+  ]
+ },
+ {
+  "path": "/Samples/Leads/sd-Short-sfx.wav",
+  "tags": [
+   "lead",
+   "sd-short-sfx"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Claps/Punchy.flac",
+  "tags": [
+   "clap",
+   "punchy"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/Foley/Vocals/vox_stab_sfx_Dry.mp3",
+  "tags": [
+   "dry",
+   "effect",
+   "foley",
+   "one",
+   "shot",
+   "stab",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Claps/pad-02-Wet-crash.mp3",
+  "tags": [
+   "cinematic",
+   "clap",
+   "effect",
+   "pad-02-wet-crash"
+  ]
+ },
+ {
+  "path": "/Samples/FX/Leads/Loops/rim-arp-crash.mp3",
+  "tags": [
+   "effect",
+   "lead",
+   "loop",
+   "rim-arp-crash"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Claps/Synths/One Shots/Distorted-Bright-crash-rim.wav",
+  "tags": [
+   "cinematic",
+   "clap",
+   "distorted-bright-crash-rim",
+   "effect",
+   "one",
+   "shot",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Drums/tom Hit F#.wav",
+  "tags": [
+   "drum",
+   "f#",
+   "hit",
+   "techno",
+   "tom",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Claps/FX/Snares/Dark-01-Warm.wav",
+  "tags": [
+   "808",
+   "clap",
+   "dark-01-warm",
+   "effect",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Pads/Hats/Claps/808.mp3",
+  "tags": [
+   "808",
+   "clap",
+   "hat",
+   "pad"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Textures/bd-final-Am.flac",
+  "tags": [
+   "bd-final-am",
+   "loop",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Kicks/Percussion/Long.wav",
+  "tags": [
+   "2020",
+   "analog",
+   "drum",
+   "kick",
+   "long",
+   "percussion"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/One Shots/Percussion/Clean_fx_snare_v2.mp3",
+  "tags": [
+   "2020",
+   "analog",
+   "clean",
+   "drum",
+   "effect",
+   "one",
+   "percussion",
+   "shot",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/tom-riser.aif",
+  "tags": [
+   "loop",
+   "tom-riser"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Kicks/Synths/Percussion/F#sfx.aif",
+  "tags": [
+   "beat",
+   "break",
+   "f#sfx",
+   "kick",
+   "percussion",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Kicks/Leads/Vocals/arp-perc-120.flac",
+  "tags": [
+   "arp-perc-120",
+   "kick",
+   "lead",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Textures/vox_tom_F#_808.aif",
+  "tags": [
+   "808",
+   "bass",
+   "f#",
+   "texture",
+   "tom",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Pads/Foley/FX/Wet-pad-pluck.flac",
+  "tags": [
+   "effect",
+   "foley",
+   "pad",
+   "techno",
+   "toolkit",
+   "wet-pad-pluck"
+  ]
+ },
+ {
+  "path": "/Samples/Snares/Kicks/final.flac",
+  "tags": [
+   "kick",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/FX/Clean.mp3",
+  "tags": [
+   "808",
+   "clean",
+   "effect"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Claps/One Shots/pad_v2_Hard_clap.aif",
+  "tags": [
+   "2020",
+   "analog",
+   "clap",
+   "drum",
+   "hard",
+   "one",
+   "pad",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Pads/Dark chop.wav",
+  "tags": [
+   "beat",
+   "break",
+   "chop",
+   "dark",
+   "pad"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Kicks/Drums/snare.mp3",
+  "tags": [
+   "beat",
+   "break",
+   "drum",
+   "kick",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/Leads/90bpm-Long-Short-vox.wav",
+  "tags": [
+   "90",
+   "90bpm-long-short-vox",
+   "bpm-long-short-vox",
+   "lead"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/02 hh stab Hit.mp3",
+  "tags": [
+   "02",
+   "hi-hat",
+   "hit",
+   "one",
+   "shot",
+   "stab"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/Kicks/sd 808.wav",
+  "tags": [
+   "808",
+   "kick",
+   "one",
+   "shot",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/Vocals/FX/02_Wet_vox_Short.wav",
+  "tags": [
+   "02",
+   "effect",
+   "percussion",
+   "short",
+   "vocal",
+   "wet"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Pads/Synths/Hard riser sfx hihat.aif",
+  "tags": [
+   "808",
+   "effect",
+   "hard",
+   "hi-hat",
+   "pad",
+   "riser",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/LoFi_Dreams/Loops/Vocals/Drums/Dark.mp3",
+  "tags": [
+   "dark",
+   "dream",
+   "drum",
+   "fi",
+   "lo",
+   "loop",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Textures/Long-F#-bass.wav",
+  "tags": [
+   "bass",
+   "long-f#-bass",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Warm-Distorted-vox.wav",
+  "tags": [
+   "bass",
+   "warm-distorted-vox"
+  ]
+ },
+ {
+  "path": "/Samples/Foley/Snares/ShortCmsnare.mp3",
+  "tags": [
+   "cmsnare",
+   "foley",
+   "short",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/Claps/Foley/F# hh final.mp3",
+  "tags": [
+   "808",
+   "clap",
+   "f#",
+   "foley",
+   "hi-hat"
+  ]
+ },
+ {
+  "path": "/Samples/Cinematic FX Pack/Hats/bd Punchy.flac",
+  "tags": [
+   "cinematic",
+   "effect",
+   "hat",
+   "kick",
+   "punchy"
+  ]
+ },
+ {
+  "path": "/Samples/Foley/Hard.mp3",
+  "tags": [
+   "foley",
+   "hard"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Foley/Kicks/Wet_pad_Distorted_Dark.wav",
+  "tags": [
+   "dark",
+   "distorted",
+   "foley",
+   "kick",
+   "pad",
+   "techno",
+   "toolkit",
+   "wet"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Leads/Foley/Percussion/fxtom.aif",
+  "tags": [
+   "foley",
+   "fxtom",
+   "lead",
+   "percussion"
+  ]
+ },
+ {
+  "path": "/Samples/Hats/stab Hard.flac",
+  "tags": [
+   "hard",
+   "hat",
+   "stab"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Drums/Textures/Claps/Clean-Dark-bass-crash.flac",
+  "tags": [
+   "clap",
+   "clean-dark-bass-crash",
+   "drum",
+   "house-essential",
+   "texture"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Bass/Percussion/One Shots/shaker Dry Long Bright.aif",
+  "tags": [
+   "bass",
+   "bright",
+   "dry",
+   "long",
+   "one",
+   "percussion",
+   "shaker",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/LoFi_Dreams/FX/stab01Distortedshaker.mp3",
+  "tags": [
+   "01",
+   "distortedshaker",
+   "dream",
+   "effect",
+   "fi",
+   "lo",
+   "stab"
+  ]
+ },
+ {
+  "path": "/Samples/Kicks/Claps/Textures/Punchy_vox_rim_v2.flac",
+  "tags": [
+   "clap",
+   "kick",
+   "punchy",
+   "rimshot",
+   "texture",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Synths/Kicks/Vocals/vox-Dry.wav",
+  "tags": [
+   "kick",
+   "synthesizer",
+   "vocal",
+   "vox-dry"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Percussion/Snares/Vocals/90bpm_v2_shaker_Dry.flac",
+  "tags": [
+   "90",
+   "bpm",
+   "dry",
+   "percussion",
+   "shaker",
+   "snare",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Pads/bdCleanPunchy120.wav",
+  "tags": [
+   "120",
+   "bass",
+   "clean",
+   "kick",
+   "pad",
+   "punchy"
+  ]
+ },
+ {
+  "path": "/Samples/One Shots/Synths/Hit_hh_Dark_crash.aif",
+  "tags": [
+   "crash",
+   "dark",
+   "hi-hat",
+   "hit",
+   "one",
+   "shot",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Drums/Short sfx Dark.flac",
+  "tags": [
+   "2020",
+   "analog",
+   "dark",
+   "drum",
+   "effect",
+   "short"
+  ]
+ },
+ {
+  "path": "/Samples/808 Collection/One Shots/Pads/Claps/tombassWetimpact.wav",
+  "tags": [
+   "808",
+   "clap",
+   "one",
+   "pad",
+   "shot",
+   "tombass",
+   "wetimpact"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 3/One Shots/Percussion/FX/Dry.wav",
+  "tags": [
+   "dry",
+   "effect",
+   "one",
+   "percussion",
+   "shot"
+  ]
+ },
+ {
+  "path": "/Samples/Bass/Bright.aif",
+  "tags": [
+   "bass",
+   "bright"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Loops/120PunchyDark.mp3",
+  "tags": [
+   "120",
+   "dark",
+   "loop",
+   "punchy",
+   "techno",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/Loops/Wet pluck v2 Hard.aif",
+  "tags": [
+   "hard",
+   "loop",
+   "pluck",
+   "wet"
+  ]
+ },
+ {
+  "path": "/Samples/Percussion/Loops/HitvoxpluckHard.mp3",
+  "tags": [
+   "hard",
+   "hitvoxpluck",
+   "loop",
+   "percussion"
+  ]
+ },
+ {
+  "path": "/Samples/House-Essentials/Drums/Synths/One Shots/hihat Hit ride Hard.flac",
+  "tags": [
+   "drum",
+   "hard",
+   "hi-hat",
+   "hit",
+   "house-essential",
+   "one",
+   "ride",
+   "shot",
+   "synthesizer"
+  ]
+ },
+ {
+  "path": "/Samples/Claps/Dry stab vox 01.aif",
+  "tags": [
+   "01",
+   "clap",
+   "dry",
+   "stab",
+   "vocal"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Snares/One Shots/arpLonghh.mp3",
+  "tags": [
+   "2020",
+   "analog",
+   "arpeggio",
+   "drum",
+   "longhh",
+   "one",
+   "shot",
+   "snare"
+  ]
+ },
+ {
+  "path": "/Samples/Pads/tom_Am_final_hh.flac",
+  "tags": [
+   "am",
+   "hi-hat",
+   "pad",
+   "tom"
+  ]
+ },
+ {
+  "path": "/Samples/Vol 1/Pads/Claps/Drums/02-clap-Clean.aif",
+  "tags": [
+   "02-clap-clean",
+   "clap",
+   "drum",
+   "pad"
+  ]
+ },
+ {
+  "path": "/Samples/Techno Toolkit/Snares/DarkbdSoftshaker.flac",
+  "tags": [
+   "darkbd",
+   "snare",
+   "softshaker",
+   "techno",
+   "toolkit"
+  ]
+ },
+ {
+  "path": "/Samples/BreakBeats/Hats/Loops/sfx-Am.flac",
+  "tags": [
+   "beat",
+   "break",
+   "hat",
+   "loop",
+   "sfx-am"
+  ]
+ },
+ {
+  "path": "/Samples/Analog_Drums_2020/Snares/FX/808-Warm.aif",
+  "tags": [
+   "2020",
+   "808-warm",
+   "analog",
+   "drum",
+   "effect",
+   "snare"
+  ]
+ }
+]

@@ -1,0 +1,1422 @@
+{
+ "generator": {
+  "python": "3.12.14",
+  "numpy": "2.5.4",
+  "librosa": "0.11.0",
+  "torch": "2.14.1",
+  "transformers": "4.57.6",
+  "model": "laion/clap-htsat-fused",
+  "model_snapshot": "365dea6ef167def6676140ed93bbc43f84dabb28",
+  "legacy_tag": "legacy-python-v0.2",
+  "legacy_commit": "b954ce7bf74c7e1acc1298d734e0cb8ee451bf9a",
+  "native_window_s": 10.0,
+  "legacy_window_s": 7.0,
+  "sample_rate": 48000
+ },
+ "audio": [
+  {
+   "name": "kick_short.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 16800,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.15143455982620146,
+    "percussiveness": 28.153167724609375,
+    "energy": 0.175421804189682,
+    "tonality": 0.9999993323536955,
+    "noisiness": 0.0007916831527836621,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.15143455982620146,
+    "percussiveness": 28.153167724609375,
+    "energy": 0.175421804189682,
+    "tonality": 0.9999993323536955,
+    "noisiness": 0.0007916831527836621,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "kick_long_tail.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 57600,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.4014714823383407,
+    "percussiveness": 15.239490509033203,
+    "energy": 0.2895553410053253,
+    "tonality": 0.999494826537557,
+    "noisiness": 0.0019792011007666588,
+    "duration": 0.15
+   },
+   "dims_10s": {
+    "brightness": 0.4014714823383407,
+    "percussiveness": 15.239490509033203,
+    "energy": 0.2895553410053253,
+    "tonality": 0.999494826537557,
+    "noisiness": 0.0019792011007666588,
+    "duration": 0.15
+   },
+   "samples_7s": 57600,
+   "samples_10s": 57600
+  },
+  {
+   "name": "snare_basic.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 19200,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.3862667661049477,
+    "percussiveness": 110.32762908935547,
+    "energy": 0.06695173680782318,
+    "tonality": 0.9999923353088889,
+    "noisiness": 0.20196254551410675,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.3862667661049477,
+    "percussiveness": 110.32762908935547,
+    "energy": 0.06695173680782318,
+    "tonality": 0.9999923353088889,
+    "noisiness": 0.20196254551410675,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "hat_closed_tiny.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 5760,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.12389581367761014,
+    "percussiveness": 23.231449127197266,
+    "energy": 0.03961329534649849,
+    "tonality": 0.9999998853065435,
+    "noisiness": 0.07212650030851364,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.12389581367761014,
+    "percussiveness": 23.231449127197266,
+    "energy": 0.03961329534649849,
+    "tonality": 0.9999998853065435,
+    "noisiness": 0.07212650030851364,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "hat_open.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 28800,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.589075120149773,
+    "percussiveness": 128.04165649414062,
+    "energy": 0.08229725062847137,
+    "tonality": 0.9997668257710757,
+    "noisiness": 0.35786160826683044,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.589075120149773,
+    "percussiveness": 128.04165649414062,
+    "energy": 0.08229725062847137,
+    "tonality": 0.9997668257710757,
+    "noisiness": 0.35786160826683044,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "rim_click.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 2400,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.0506130111660492,
+    "percussiveness": 26.219892501831055,
+    "energy": 0.020412415266036987,
+    "tonality": 0.9999999440957978,
+    "noisiness": 0.0,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.0506130111660492,
+    "percussiveness": 26.219892501831055,
+    "energy": 0.020412415266036987,
+    "tonality": 0.9999999440957978,
+    "noisiness": 0.0,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "tom_mid.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 24000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.20938139102336764,
+    "percussiveness": 23.667274475097656,
+    "energy": 0.22474639117717743,
+    "tonality": 0.9999974098611801,
+    "noisiness": 0.001083355862647295,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.20938139102336764,
+    "percussiveness": 23.667274475097656,
+    "energy": 0.22474639117717743,
+    "tonality": 0.9999974098611801,
+    "noisiness": 0.001083355862647295,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "sine_100.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.4592042867901867,
+    "percussiveness": 1.652253270149231,
+    "energy": 0.7045504450798035,
+    "tonality": 0.999845161306439,
+    "noisiness": 0.004145919810980558,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.4592042867901867,
+    "percussiveness": 1.652253270149231,
+    "energy": 0.7045504450798035,
+    "tonality": 0.999845161306439,
+    "noisiness": 0.004145919810980558,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "sine_220.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5369991082929251,
+    "percussiveness": 0.9558472037315369,
+    "energy": 0.7059066891670227,
+    "tonality": 0.9997496495780069,
+    "noisiness": 0.009156345389783382,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.5369991082929251,
+    "percussiveness": 0.9558472037315369,
+    "energy": 0.7059066891670227,
+    "tonality": 0.9997496495780069,
+    "noisiness": 0.009156345389783382,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "sine_440.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.6041375064700257,
+    "percussiveness": 0.283084899187088,
+    "energy": 0.7059152126312256,
+    "tonality": 0.9997491084795911,
+    "noisiness": 0.018323106691241264,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.6041375064700257,
+    "percussiveness": 0.283084899187088,
+    "energy": 0.7059152126312256,
+    "tonality": 0.9997491084795911,
+    "noisiness": 0.018323106691241264,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "sine_1000.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.6849938512596985,
+    "percussiveness": 0.06230917572975159,
+    "energy": 0.7059136629104614,
+    "tonality": 0.9999696569066145,
+    "noisiness": 0.04165668413043022,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.6849938512596985,
+    "percussiveness": 0.06230917572975159,
+    "energy": 0.7059136629104614,
+    "tonality": 0.9999696569066145,
+    "noisiness": 0.04165668413043022,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "sine_4000.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.8223552424828344,
+    "percussiveness": 0.021994180977344513,
+    "energy": 0.7059171795845032,
+    "tonality": 0.9999540032113146,
+    "noisiness": 0.16665798425674438,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.8223552424828344,
+    "percussiveness": 0.021994180977344513,
+    "energy": 0.7059171795845032,
+    "tonality": 0.9999540032113146,
+    "noisiness": 0.16665798425674438,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "sine_10000.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.9131944906039258,
+    "percussiveness": 0.02197939157485962,
+    "energy": 0.7059171199798584,
+    "tonality": 0.999910497572273,
+    "noisiness": 0.4166605770587921,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.9131944906039258,
+    "percussiveness": 0.02197939157485962,
+    "energy": 0.7059171199798584,
+    "tonality": 0.999910497572273,
+    "noisiness": 0.4166605770587921,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "pad_slow_attack.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 288000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5234578862162501,
+    "percussiveness": 136.52496337890625,
+    "energy": 0.3175860047340393,
+    "tonality": 0.9995945754635613,
+    "noisiness": 0.007986138574779034,
+    "duration": 0.75
+   },
+   "dims_10s": {
+    "brightness": 0.5234578862162501,
+    "percussiveness": 136.52496337890625,
+    "energy": 0.3175860047340393,
+    "tonality": 0.9995945754635613,
+    "noisiness": 0.007986138574779034,
+    "duration": 0.75
+   },
+   "samples_7s": 288000,
+   "samples_10s": 288000
+  },
+  {
+   "name": "pad_9p5s.flac",
+   "format": "flac",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 456000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.48362002483136896,
+    "percussiveness": 129.484619140625,
+    "energy": 0.3674977421760559,
+    "tonality": 0.9995970540912822,
+    "noisiness": 0.005172634497284889,
+    "duration": 0.875
+   },
+   "dims_10s": {
+    "brightness": 0.4831654957548265,
+    "percussiveness": 129.27210998535156,
+    "energy": 0.37407273054122925,
+    "tonality": 0.999605593882734,
+    "noisiness": 0.005179835949093103,
+    "duration": 1.0
+   },
+   "samples_7s": 336000,
+   "samples_10s": 456000
+  },
+  {
+   "name": "lead_saw.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 72000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.7463319686217774,
+    "percussiveness": 1.4524743556976318,
+    "energy": 0.2599097788333893,
+    "tonality": 0.9984170850366354,
+    "noisiness": 0.01373630203306675,
+    "duration": 0.1875
+   },
+   "dims_10s": {
+    "brightness": 0.7463319686217774,
+    "percussiveness": 1.4524743556976318,
+    "energy": 0.2599097788333893,
+    "tonality": 0.9984170850366354,
+    "noisiness": 0.01373630203306675,
+    "duration": 0.1875
+   },
+   "samples_7s": 72000,
+   "samples_10s": 72000
+  },
+  {
+   "name": "bass_sub.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 72000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.4008419307278518,
+    "percussiveness": 28.540733337402344,
+    "energy": 0.7058552503585815,
+    "tonality": 0.999787741311593,
+    "noisiness": 0.002277809428051114,
+    "duration": 0.1875
+   },
+   "dims_10s": {
+    "brightness": 0.4008419307278518,
+    "percussiveness": 28.540733337402344,
+    "energy": 0.7058552503585815,
+    "tonality": 0.999787741311593,
+    "noisiness": 0.002277809428051114,
+    "duration": 0.1875
+   },
+   "samples_7s": 72000,
+   "samples_10s": 72000
+  },
+  {
+   "name": "pluck.aif",
+   "format": "aiff",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5175204996885207,
+    "percussiveness": 46.683719635009766,
+    "energy": 0.2250620424747467,
+    "tonality": 0.9998075069597689,
+    "noisiness": 0.013083606027066708,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.5175204996885207,
+    "percussiveness": 46.683719635009766,
+    "energy": 0.2250620424747467,
+    "tonality": 0.9998075069597689,
+    "noisiness": 0.013083606027066708,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "arpeggio.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 144000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5935693981345045,
+    "percussiveness": 70.24102020263672,
+    "energy": 0.2538537383079529,
+    "tonality": 0.9989766770740971,
+    "noisiness": 0.015694553032517433,
+    "duration": 0.375
+   },
+   "dims_10s": {
+    "brightness": 0.5935693981345045,
+    "percussiveness": 70.24102020263672,
+    "energy": 0.2538537383079529,
+    "tonality": 0.9989766770740971,
+    "noisiness": 0.015694553032517433,
+    "duration": 0.375
+   },
+   "samples_7s": 144000,
+   "samples_10s": 144000
+  },
+  {
+   "name": "noise_white_1s.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.9312513129675498,
+    "percussiveness": 149.21194458007812,
+    "energy": 0.23243677616119385,
+    "tonality": 0.1548072099685669,
+    "noisiness": 0.5025521516799927,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.9312513129675498,
+    "percussiveness": 149.21194458007812,
+    "energy": 0.23243677616119385,
+    "tonality": 0.1548072099685669,
+    "noisiness": 0.5025521516799927,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "noise_pink_2s.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.7573165946569387,
+    "percussiveness": 149.32810974121094,
+    "energy": 0.2519654929637909,
+    "tonality": 0.9881912330165505,
+    "noisiness": 0.07879249006509781,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.7573165946569387,
+    "percussiveness": 149.32810974121094,
+    "energy": 0.2519654929637909,
+    "tonality": 0.9881912330165505,
+    "noisiness": 0.07879249006509781,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "fx_riser.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 192000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.9299230895562346,
+    "percussiveness": 147.0190887451172,
+    "energy": 0.11356642097234726,
+    "tonality": 0.6663787364959717,
+    "noisiness": 0.44399189949035645,
+    "duration": 0.5
+   },
+   "dims_10s": {
+    "brightness": 0.9299230895562346,
+    "percussiveness": 147.0190887451172,
+    "energy": 0.11356642097234726,
+    "tonality": 0.6663787364959717,
+    "noisiness": 0.44399189949035645,
+    "duration": 0.5
+   },
+   "samples_7s": 192000,
+   "samples_10s": 192000
+  },
+  {
+   "name": "fx_downlifter.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 144000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.928864538898466,
+    "percussiveness": 140.14108276367188,
+    "energy": 0.12478954344987869,
+    "tonality": 0.6541846096515656,
+    "noisiness": 0.4402252733707428,
+    "duration": 0.375
+   },
+   "dims_10s": {
+    "brightness": 0.928864538898466,
+    "percussiveness": 140.14108276367188,
+    "energy": 0.12478954344987869,
+    "tonality": 0.6541846096515656,
+    "noisiness": 0.4402252733707428,
+    "duration": 0.375
+   },
+   "samples_7s": 144000,
+   "samples_10s": 144000
+  },
+  {
+   "name": "fx_impact.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 120000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.39722768230737693,
+    "percussiveness": 12.248287200927734,
+    "energy": 0.30000030994415283,
+    "tonality": 0.9995184302388225,
+    "noisiness": 0.0019250160548835993,
+    "duration": 0.3125
+   },
+   "dims_10s": {
+    "brightness": 0.39722768230737693,
+    "percussiveness": 12.248287200927734,
+    "energy": 0.30000030994415283,
+    "tonality": 0.9995184302388225,
+    "noisiness": 0.0019250160548835993,
+    "duration": 0.3125
+   },
+   "samples_7s": 120000,
+   "samples_10s": 120000
+  },
+  {
+   "name": "click_train.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.15020635266841492,
+    "percussiveness": 424.5135498046875,
+    "energy": 0.012909944169223309,
+    "tonality": 0.9999997151876983,
+    "noisiness": 0.0,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.15020635266841492,
+    "percussiveness": 424.5135498046875,
+    "energy": 0.012909944169223309,
+    "tonality": 0.9999997151876983,
+    "noisiness": 0.0,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "vocal_formant.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 57600,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.6769449894784361,
+    "percussiveness": 8.433389663696289,
+    "energy": 0.2801096439361572,
+    "tonality": 0.999180565297138,
+    "noisiness": 0.02333373762667179,
+    "duration": 0.15
+   },
+   "dims_10s": {
+    "brightness": 0.6769449894784361,
+    "percussiveness": 8.433389663696289,
+    "energy": 0.2801096439361572,
+    "tonality": 0.999180565297138,
+    "noisiness": 0.02333373762667179,
+    "duration": 0.15
+   },
+   "samples_7s": 57600,
+   "samples_10s": 57600
+  },
+  {
+   "name": "crackle.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 96000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5657777392237991,
+    "percussiveness": 314.43572998046875,
+    "energy": 0.015863511711359024,
+    "tonality": 0.9995379735773895,
+    "noisiness": 0.0008125084568746388,
+    "duration": 0.25
+   },
+   "dims_10s": {
+    "brightness": 0.5657777392237991,
+    "percussiveness": 314.43572998046875,
+    "energy": 0.015863511711359024,
+    "tonality": 0.9995379735773895,
+    "noisiness": 0.0008125084568746388,
+    "duration": 0.25
+   },
+   "samples_7s": 96000,
+   "samples_10s": 96000
+  },
+  {
+   "name": "loop_drums_120.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 192000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5705632013756229,
+    "percussiveness": 179.58338928222656,
+    "energy": 0.10698268562555313,
+    "tonality": 0.9994921460165642,
+    "noisiness": 0.21782925724983215,
+    "duration": 0.5
+   },
+   "dims_10s": {
+    "brightness": 0.5705632013756229,
+    "percussiveness": 179.58338928222656,
+    "energy": 0.10698268562555313,
+    "tonality": 0.9994921460165642,
+    "noisiness": 0.21782925724983215,
+    "duration": 0.5
+   },
+   "samples_7s": 192000,
+   "samples_10s": 192000
+  },
+  {
+   "name": "loop_drums_90_stereo.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 2,
+   "frames": 256000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.4615753646190571,
+    "percussiveness": 166.1585693359375,
+    "energy": 0.1250259280204773,
+    "tonality": 0.9999305720630218,
+    "noisiness": 0.1658404916524887,
+    "duration": 0.6666666666666666
+   },
+   "dims_10s": {
+    "brightness": 0.4615753646190571,
+    "percussiveness": 166.1585693359375,
+    "energy": 0.1250259280204773,
+    "tonality": 0.9999305720630218,
+    "noisiness": 0.1658404916524887,
+    "duration": 0.6666666666666666
+   },
+   "samples_7s": 256000,
+   "samples_10s": 256000
+  },
+  {
+   "name": "loop_7s.flac",
+   "format": "flac",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 336000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5163860208326111,
+    "percussiveness": 119.33943176269531,
+    "energy": 0.28146278858184814,
+    "tonality": 0.9994852994568646,
+    "noisiness": 0.006958354264497757,
+    "duration": 0.875
+   },
+   "dims_10s": {
+    "brightness": 0.5163860208326111,
+    "percussiveness": 119.33943176269531,
+    "energy": 0.28146278858184814,
+    "tonality": 0.9994852994568646,
+    "noisiness": 0.006958354264497757,
+    "duration": 0.875
+   },
+   "samples_7s": 336000,
+   "samples_10s": 336000
+  },
+  {
+   "name": "loop_10s.flac",
+   "format": "flac",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 480000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5161016919511542,
+    "percussiveness": 118.80067443847656,
+    "energy": 0.2578755021095276,
+    "tonality": 0.9994437811546959,
+    "noisiness": 0.007360140793025494,
+    "duration": 0.875
+   },
+   "dims_10s": {
+    "brightness": 0.5167291160592045,
+    "percussiveness": 119.52847290039062,
+    "energy": 0.2587832808494568,
+    "tonality": 0.9994450905942358,
+    "noisiness": 0.007414598949253559,
+    "duration": 1.0
+   },
+   "samples_7s": 336000,
+   "samples_10s": 480000
+  },
+  {
+   "name": "loop_12s.flac",
+   "format": "flac",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 576000,
+   "note": "longer than window",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5160669900224895,
+    "percussiveness": 125.50794219970703,
+    "energy": 0.2358078509569168,
+    "tonality": 0.9993949134950526,
+    "noisiness": 0.007955380715429783,
+    "duration": 0.875
+   },
+   "dims_10s": {
+    "brightness": 0.5165205262645607,
+    "percussiveness": 125.83641815185547,
+    "energy": 0.23823221027851105,
+    "tonality": 0.9994027797365561,
+    "noisiness": 0.008018766529858112,
+    "duration": 1.0
+   },
+   "samples_7s": 336000,
+   "samples_10s": 480000
+  },
+  {
+   "name": "loop_15s.flac",
+   "format": "flac",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 720000,
+   "note": "longer than window",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5153632594936425,
+    "percussiveness": 129.71241760253906,
+    "energy": 0.22538727521896362,
+    "tonality": 0.999359734065365,
+    "noisiness": 0.007616094313561916,
+    "duration": 0.875
+   },
+   "dims_10s": {
+    "brightness": 0.5158160392904022,
+    "percussiveness": 130.4478759765625,
+    "energy": 0.22747699916362762,
+    "tonality": 0.9993677294114605,
+    "noisiness": 0.007668766193091869,
+    "duration": 1.0
+   },
+   "samples_7s": 336000,
+   "samples_10s": 480000
+  },
+  {
+   "name": "edge_silence.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "peak is zero",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.0,
+    "percussiveness": 0.0,
+    "energy": 0.0,
+    "tonality": 7.748603820800781e-07,
+    "noisiness": 0.0,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.0,
+    "percussiveness": 0.0,
+    "energy": 0.0,
+    "tonality": 7.748603820800781e-07,
+    "noisiness": 0.0,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "edge_near_silence.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.9253426240838251,
+    "percussiveness": 141.55923461914062,
+    "energy": 0.2710234522819519,
+    "tonality": 0.19641971588134766,
+    "noisiness": 0.50328129529953,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.9253426240838251,
+    "percussiveness": 141.55923461914062,
+    "energy": 0.2710234522819519,
+    "tonality": 0.19641971588134766,
+    "noisiness": 0.50328129529953,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "edge_dc_offset.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.9028975679125743,
+    "percussiveness": 111.09467315673828,
+    "energy": 0.4759680926799774,
+    "tonality": 0.3560969829559326,
+    "noisiness": 4.166753569734283e-05,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.9028975679125743,
+    "percussiveness": 111.09467315673828,
+    "energy": 0.4759680926799774,
+    "tonality": 0.3560969829559326,
+    "noisiness": 4.166753569734283e-05,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "edge_square_clip.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 48000,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.8431556919912385,
+    "percussiveness": 1.9794906377792358,
+    "energy": 0.999984622001648,
+    "tonality": 0.7273938357830048,
+    "noisiness": 0.008312673307955265,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.8431556919912385,
+    "percussiveness": 1.9794906377792358,
+    "energy": 0.999984622001648,
+    "tonality": 0.7273938357830048,
+    "noisiness": 0.008312673307955265,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "edge_very_short.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 480,
+   "note": "below 1 s minimum",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.007467984176217048,
+    "percussiveness": 0.0,
+    "energy": 0.04294021800160408,
+    "tonality": 0.999999811685143,
+    "noisiness": 0.00041667534969747066,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.007467984176217048,
+    "percussiveness": 0.0,
+    "energy": 0.04294021800160408,
+    "tonality": 0.999999811685143,
+    "noisiness": 0.00041667534969747066,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "edge_short_0p2s.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 9600,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.1369631936833836,
+    "percussiveness": 4.946216106414795,
+    "energy": 0.3108997642993927,
+    "tonality": 0.9999999552403018,
+    "noisiness": 0.006666805595159531,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.1369631936833836,
+    "percussiveness": 4.946216106414795,
+    "energy": 0.3108997642993927,
+    "tonality": 0.9999999552403018,
+    "noisiness": 0.006666805595159531,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "sr44100_sine.wav",
+   "format": "wav",
+   "source_sr": 44100,
+   "channels": 1,
+   "frames": 66150,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.6040874392459713,
+    "percussiveness": 0.3004316985607147,
+    "energy": 0.7055172324180603,
+    "tonality": 0.9998229873745004,
+    "noisiness": 0.018333587795495987,
+    "duration": 0.1875
+   },
+   "dims_10s": {
+    "brightness": 0.6040874392459713,
+    "percussiveness": 0.3004316985607147,
+    "energy": 0.7055172324180603,
+    "tonality": 0.9998229873745004,
+    "noisiness": 0.018333587795495987,
+    "duration": 0.1875
+   },
+   "samples_7s": 72000,
+   "samples_10s": 72000
+  },
+  {
+   "name": "sr44100_kick.wav",
+   "format": "wav",
+   "source_sr": 44100,
+   "channels": 1,
+   "frames": 17640,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.1764038149046097,
+    "percussiveness": 26.48421287536621,
+    "energy": 0.17555594444274902,
+    "tonality": 0.9999990033089716,
+    "noisiness": 0.0008750182460062206,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.1764038149046097,
+    "percussiveness": 26.48421287536621,
+    "energy": 0.17555594444274902,
+    "tonality": 0.9999990033089716,
+    "noisiness": 0.0008750182460062206,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "sr22050_pad.wav",
+   "format": "wav",
+   "source_sr": 22050,
+   "channels": 1,
+   "frames": 44100,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.536609538957507,
+    "percussiveness": 99.09593200683594,
+    "energy": 0.42818576097488403,
+    "tonality": 0.9999769983714941,
+    "noisiness": 0.010302083566784859,
+    "duration": 0.25000260416666664
+   },
+   "dims_10s": {
+    "brightness": 0.536609538957507,
+    "percussiveness": 99.09593200683594,
+    "energy": 0.42818576097488403,
+    "tonality": 0.9999769983714941,
+    "noisiness": 0.010302083566784859,
+    "duration": 0.25000260416666664
+   },
+   "samples_7s": 96001,
+   "samples_10s": 96001
+  },
+  {
+   "name": "sr96000_hat.wav",
+   "format": "wav",
+   "source_sr": 96000,
+   "channels": 1,
+   "frames": 28800,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.29840363386734015,
+    "percussiveness": 92.48839569091797,
+    "energy": 0.05049707740545273,
+    "tonality": 0.9999986506571759,
+    "noisiness": 0.17389945685863495,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.29840363386734015,
+    "percussiveness": 92.48839569091797,
+    "energy": 0.05049707740545273,
+    "tonality": 0.9999986506571759,
+    "noisiness": 0.17389945685863495,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "bits24_kick.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 19200,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.1684393558728686,
+    "percussiveness": 26.47026252746582,
+    "energy": 0.17555588483810425,
+    "tonality": 0.9999997475793521,
+    "noisiness": 0.0008750182460062206,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.1684393558728686,
+    "percussiveness": 26.47026252746582,
+    "energy": 0.17555588483810425,
+    "tonality": 0.9999997475793521,
+    "noisiness": 0.0008750182460062206,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "float32_snare.wav",
+   "format": "wav",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 19200,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.3864437743078367,
+    "percussiveness": 111.01023864746094,
+    "energy": 0.058156706392765045,
+    "tonality": 0.9999916773258519,
+    "noisiness": 0.20283755660057068,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.3864437743078367,
+    "percussiveness": 111.01023864746094,
+    "energy": 0.058156706392765045,
+    "tonality": 0.9999916773258519,
+    "noisiness": 0.20283755660057068,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "stereo_44100_loop.flac",
+   "format": "flac",
+   "source_sr": 44100,
+   "channels": 2,
+   "frames": 105840,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.5446571242373062,
+    "percussiveness": 160.50926208496094,
+    "energy": 0.11661307513713837,
+    "tonality": 0.9998934809700586,
+    "noisiness": 0.19928818941116333,
+    "duration": 0.3000026041666667
+   },
+   "dims_10s": {
+    "brightness": 0.5446571242373062,
+    "percussiveness": 160.50926208496094,
+    "energy": 0.11661307513713837,
+    "tonality": 0.9998934809700586,
+    "noisiness": 0.19928818941116333,
+    "duration": 0.3000026041666667
+   },
+   "samples_7s": 115201,
+   "samples_10s": 115201
+  },
+  {
+   "name": "snare.aiff",
+   "format": "aiff",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 19200,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.38648348768669005,
+    "percussiveness": 104.33180236816406,
+    "energy": 0.06271351873874664,
+    "tonality": 0.9999920243108136,
+    "noisiness": 0.20396257936954498,
+    "duration": 0.125
+   },
+   "dims_10s": {
+    "brightness": 0.38648348768669005,
+    "percussiveness": 104.33180236816406,
+    "energy": 0.06271351873874664,
+    "tonality": 0.9999920243108136,
+    "noisiness": 0.20396257936954498,
+    "duration": 0.125
+   },
+   "samples_7s": 48000,
+   "samples_10s": 48000
+  },
+  {
+   "name": "lead.mp3",
+   "format": "mp3",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 72000,
+   "note": "lossy",
+   "lossy": true,
+   "dims_7s": {
+    "brightness": 0.7329643980219217,
+    "percussiveness": 5.720474720001221,
+    "energy": 0.25622856616973877,
+    "tonality": 0.9873665682971478,
+    "noisiness": 0.013514076359570026,
+    "duration": 0.1875
+   },
+   "dims_10s": {
+    "brightness": 0.7329643980219217,
+    "percussiveness": 5.720474720001221,
+    "energy": 0.25622856616973877,
+    "tonality": 0.9873665682971478,
+    "noisiness": 0.013514076359570026,
+    "duration": 0.1875
+   },
+   "samples_7s": 72000,
+   "samples_10s": 72000
+  },
+  {
+   "name": "pad.mp3",
+   "format": "mp3",
+   "source_sr": 44100,
+   "channels": 1,
+   "frames": 110250,
+   "note": "lossy",
+   "lossy": true,
+   "dims_7s": {
+    "brightness": 0.6021461641875241,
+    "percussiveness": 63.09882736206055,
+    "energy": 0.44211500883102417,
+    "tonality": 0.9938704799860716,
+    "noisiness": 0.010066666640341282,
+    "duration": 0.31250260416666664
+   },
+   "dims_10s": {
+    "brightness": 0.6021461641875241,
+    "percussiveness": 63.09882736206055,
+    "energy": 0.44211500883102417,
+    "tonality": 0.9938704799860716,
+    "noisiness": 0.010066666640341282,
+    "duration": 0.31250260416666664
+   },
+   "samples_7s": 120001,
+   "samples_10s": 120001
+  },
+  {
+   "name": "bass.caf",
+   "format": "caf",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": 57600,
+   "note": "",
+   "lossy": false,
+   "dims_7s": {
+    "brightness": 0.4201061343642804,
+    "percussiveness": 34.05097579956055,
+    "energy": 0.7052587866783142,
+    "tonality": 0.9997718384693144,
+    "noisiness": 0.0026910188607871532,
+    "duration": 0.15
+   },
+   "dims_10s": {
+    "brightness": 0.4201061343642804,
+    "percussiveness": 34.05097579956055,
+    "energy": 0.7052587866783142,
+    "tonality": 0.9997718384693144,
+    "noisiness": 0.0026910188607871532,
+    "duration": 0.15
+   },
+   "samples_7s": 57600,
+   "samples_10s": 57600
+  },
+  {
+   "name": "pluck.m4a",
+   "format": "m4a",
+   "source_sr": 48000,
+   "channels": 1,
+   "frames": null,
+   "note": "lossy",
+   "lossy": true,
+   "dims_7s": {
+    "brightness": 0.7328459670528412,
+    "percussiveness": 64.70054626464844,
+    "energy": 0.22920650243759155,
+    "tonality": 0.9600153975188732,
+    "noisiness": 0.023278100416064262,
+    "duration": 0.1875
+   },
+   "dims_10s": {
+    "brightness": 0.7328459670528412,
+    "percussiveness": 64.70054626464844,
+    "energy": 0.22920650243759155,
+    "tonality": 0.9600153975188732,
+    "noisiness": 0.023278100416064262,
+    "duration": 0.1875
+   },
+   "samples_7s": 72000,
+   "samples_10s": 72000
+  }
+ ],
+ "corrupt": [
+  "truncated_header.wav",
+  "not_audio.wav",
+  "empty.wav"
+ ],
+ "mel_subset": [
+  "edge_short_0p2s.wav",
+  "kick_long_tail.wav",
+  "sine_440.wav",
+  "loop_drums_120.wav",
+  "snare_basic.wav"
+ ],
+ "decoded_subset": [
+  "sr44100_sine.wav",
+  "sr22050_pad.wav",
+  "sr96000_hat.wav",
+  "stereo_44100_loop.flac",
+  "loop_drums_90_stereo.wav",
+  "bits24_kick.wav",
+  "float32_snare.wav",
+  "pluck.aif",
+  "bass.caf",
+  "lead.mp3",
+  "pad.mp3",
+  "pluck.m4a",
+  "loop_12s.flac"
+ ]
+}

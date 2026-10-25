@@ -1,0 +1,17 @@
+[project]
+name = "sondr-golden"
+version = "0.1.0"
+description = "Generates golden fixtures for Sondr from HF CLAP and the legacy sample_vault code"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2,<3",
+    "scipy>=1.13,<2",
+    "soundfile>=0.12,<1",
+    "librosa>=0.10,<1",
+    "torch>=2.4,<3",
+    "transformers>=4.45,<5",
+    "inflect>=7,<8",
+]
+
+[tool.uv]
+package = false

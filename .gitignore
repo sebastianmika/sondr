@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+Models/
+build/
+.build/
+*.xcodeproj
+.DS_Store
