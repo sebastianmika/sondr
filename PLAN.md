@@ -1,6 +1,6 @@
 # Plan: Signal Grid theme, light/dark/system, app icon
 
-Design: `docs/DESIGN.md`. Findings: `RESEARCH.md`. Status: approved 2026-10-25, in progress. Step 0 done.
+Design: `docs/DESIGN.md`. Findings: `RESEARCH.md`. Status: all steps done on branch `theme/signal-grid`; awaiting your visual review.
 
 ## Approach
 Theme the native surfaces, do not rebuild controls. One token table (pure data, tested) in `SondrCore`, wrapped into dynamic colours in the app. Appearance is a preference applied through `NSApp.appearance`. Each step below builds, passes `swift test` and a snapshot check in both appearances, then gets its own commit.
@@ -52,7 +52,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - `clusters.json` seed colours switch to the LED set (no migration, existing libraries untouched). `design/icon.svg` master, `make icon` renders the `AppIcon` set (needs a rasteriser; see questions), `project.yml` gets the catalog and `ASSETCATALOG_COMPILER_APPICON_NAME`.
    - Verify: built app shows the icon in Finder/Dock; look at 16, 32, 128 px; if the dim dots vanish at 16/32 px, add a simplified small-size variant.
 
-10. **Docs and manual checks** (S)
+10. **Docs and manual checks** (S) — DONE
     - `docs/MANUAL_TESTS.md`: visual checklist per scheme (selection, playing, map, Settings). `docs/DECISIONS.md`: entry for the accent override, `NSApp.appearance`, derived cluster colours. README: `make icon`.
     - Verify: you run the checklist; items I cannot check (real Finder drag, system appearance switching at runtime) are marked unverified.
 

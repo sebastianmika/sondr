@@ -7,6 +7,7 @@ Desktop app (macOS 15+, Apple Silicon) to manage and search 50k–250k audio sam
 make debug            # xcodegen + xcodebuild; make release for real libraries (about 7x faster indexing)
 make run-release
 make reset            # forget the library DB and preferences (keeps Models/)
+make icon             # redraw the app icon PNGs (tools/make_icon.swift)
 SONDR_MODELS=$PWD/Models swift test    # model tests skip with a message when Models/ is missing
 ```
 
@@ -22,4 +23,4 @@ Golden fixtures: `cd tools/golden && uv sync && uv run python generate.py` (need
 `swift run sondr-testlib <count> <folder> [seed] [--db <file> --fake [--clustered] [--map]]`. Never point the app or tests at a real library without meaning to.
 
 ## Dev env vars
-`SONDR_DB`, `SONDR_MODELS`, `SONDR_SNAPSHOT=<png>` (+`SONDR_SNAPSHOT_DELAY`), `SONDR_SELECT_FIRST`, `SONDR_OPEN_SETTINGS`, `SONDR_SETTINGS_TAB`, `SONDR_SHOW_EDITOR`, `SONDR_SHOW_LAYOUT`, `SONDR_PREVIEW_PERPLEXITY`, `SONDR_BENCH`. Launch the app with `open -n -W --env KEY=VALUE …`; running the binary directly shows no window.
+`SONDR_DB`, `SONDR_MODELS`, `SONDR_APPEARANCE` (light|dark|system), `SONDR_SNAPSHOT=<png>` (+`SONDR_SNAPSHOT_DELAY`), `SONDR_SELECT_FIRST`, `SONDR_OPEN_SETTINGS`, `SONDR_SETTINGS_TAB`, `SONDR_SHOW_EDITOR`, `SONDR_SHOW_LAYOUT`, `SONDR_PREVIEW_PERPLEXITY`, `SONDR_BENCH`. Launch the app with `open -n -W --env KEY=VALUE …`; running the binary directly shows no window.

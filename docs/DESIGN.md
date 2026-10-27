@@ -1,6 +1,6 @@
 # Sondr design: "Signal Grid"
 
-Status: proposed, not implemented. Visual references: the Sondr Identity canvas (Identity, App dark, App light boards for direction A).
+Status: implemented on branch `theme/signal-grid` (see PLAN.md). Where the build differs from the first proposal it is noted below. Visual references: the Sondr Identity canvas (Identity, App dark, App light boards for direction A).
 
 ## Concept
 Elektron-leaning hardware panel. The icon is a 5×5 field of step keys with thirteen lit, tracing an S: the library is the grid, the sample you found is the lit path. The UI is dense and quiet; one signal colour marks what is selected, playing or lit, and nothing else.
@@ -24,24 +24,24 @@ Each token has a dark and a light value. Code names are proposals.
 | `text` | primary text | #E8E6E1 | #16161A |
 | `textDim` | secondary text, labels | #8F8F8A | #5F5D58 |
 | `textMid` | tertiary body text | #B4B2AC | #4A4843 |
-| `signal` | fills: playing, selected ring, progress, waveform played part | #FF5A1F | #FF5A1F |
+| `signal` | fills: playing, selected ring, progress, waveform played part | #FF5A1F | #E9440E (the brand orange is 2.7:1 on the light ground) |
 | `signalText` | signal-coloured text and thin strokes | #FF5A1F | #C63A06 |
 | `onSignal` | text/icons on a signal fill | #0E0E0F | #16161A |
 
-Contrast targets: body text 4.5:1, labels at 11 px and below 4.5:1, graphics and rings 3:1. The values above are a first pass; step 1 of the plan verifies every pair with a script and adjusts.
+Contrast targets: body text 4.5:1, labels at 11 px and below 4.5:1, graphics and rings 3:1. `ThemeTokensTests` checks every pair; the light `signal` and `signalText` values come from that test. The Table selection and `AccentColor` asset use the same two oranges.
 
 The accent is fixed. Sondr ignores the macOS system accent colour, because orange carries the meaning.
 
 ### Cluster colours
 Stored per cluster as `#RRGGBB` and editable in Settings → Clusters. Two rules:
-- The seed set becomes the "cluster LED" set from the mockup: #FF5A1F, #FFB02E, #C7D62E, #3DDC97, #35B6FF, #8E7CFF, #FF4D8D, #7FD1D1, grey #8E8E93 for unsorted. Existing libraries keep what they have (no migration).
+- The seed set (new libraries only) is the LED set, none of it the signal orange: kicks #FF4D6D, snares #FFB02E, hats/perc #AEE03A, bass #3DDC97, pads #35B6FF, leads #8E7CFF, vox chops #E066FF, fx/risers #7FD1D1; unsorted stays grey #8E8E93. `MapRasterTests` requires seed colours to be 70 apart. Existing libraries keep what they have (no migration).
 - Display colour is derived per scheme: if the stored colour has less than 3:1 contrast against `window` in the current scheme, its lightness is lowered (light) or raised (dark) until it does, hue kept. The stored value never changes. Used in sidebar, table, map, and the map raster table.
 
 ## Typography
 | Role | Font | Notes |
 |---|---|---|
 | Labels, numbers, durations, paths, readouts | IBM Plex Mono (400/500/600) | bundled, OFL licence |
-| Sample and cluster names, body | system (SF Pro) | open question: Inter Tight instead |
+| Sample and cluster names, body | system (SF Pro) | decided: no Inter Tight |
 | Section labels | Plex Mono 10.5 pt, caps, +0.16 em | e.g. LIBRARY, CLUSTERS |
 
 ## Shape and spacing
@@ -64,9 +64,9 @@ Stored per cluster as `#RRGGBB` and editable in Settings → Clusters. Two rules
 - Every token is a dynamic colour that resolves from the effective appearance, so views never branch on the scheme themselves. Places that bake colour into pixels (map raster, spectrogram) re-render on appearance change.
 
 ## App icon
-- Source: one 1024 px master SVG in `design/`, rendered to the `AppIcon` asset catalog by a script (`make icon`).
+- Source: `tools/make_icon.swift` draws the icon with Core Graphics into the `AppIcon` set (`make icon`); there is no SVG master. (`rsvg-convert` was not installed and the script avoids a new dev tool.)
 - Dark graphite tile with dim and lit dots. One icon for both schemes.
-- Must stay legible at 16 and 32 px: the plan includes a check and, if needed, a simplified small-size variant (fewer, larger dots).
+- At 32 px and below the 5×5 field cannot be resolved, so a 3×5 pixel S replaces it (whole-pixel cells, one pixel gap).
 
 ## Out of scope
 Custom replacement of Table / NavigationSplitView / Form; density settings; user-editable themes; Icon Composer light/tinted icon variants; marketing assets.

@@ -49,3 +49,15 @@ Multisamples become be first class objects. They hold a name (default = file ste
 - **Group editor**: Locations → Multisamples… : create, rename, add samples, remove member, make representative, ungroup; manual group survives Rescan and Index.
 - **Tag defaults**: Settings → Locations → Ignored tags (all locations) lists the default rules on a fresh library (edit/delete one, Apply, relaunch: stays changed); the location preview crosses out `01`, `f#`, `c-3` as "Ignored for all"; `808`, `909`, `am` stay. Note: `90bpm` loses the bare `90`.
 - **Clusters tab**: change colour (instant, sidebar/table/map recolour); change a description or add a cluster and Apply (progress row "Sorting into clusters", Cancel, quit and relaunch resumes); delete a cluster; last cluster cannot be deleted.
+
+## Theme (Signal Grid, light / dark / system)
+Run each item once in Light and once in Dark (Settings → General → Appearance), with a temp library that has clusters (`sondr-testlib ... --fake --clustered --map`).
+- **Switch live**: changing the picker restyles main window, Settings and sheets without a restart; System follows the macOS appearance, also when macOS switches while Sondr runs.
+- **Selection and playing**: selected row is orange with readable text; the playing row's icon is orange; the playhead crosses waveform and spectrogram; the spectrogram is orange, not blue, also with a fixed macOS accent colour (Table selection may then follow the system accent, see RESEARCH.md).
+- **Sidebar**: flat panel ground (not translucent), caps labels, square cluster markers, selected item readable; jobs bar shows segmented progress while indexing.
+- **Map**: ground matches the window; every cluster colour is visible (light: yellow, lime, teal darkened but same hue); selection ring, drag rectangle and hover label; flipping the scheme redraws the map.
+- **Axes**: lines visible on both grounds; brushed ranges orange.
+- **Settings**: all four tabs; Clusters colour wells show the stored colour (the app may show a darker or lighter shade in light/dark, by design).
+- **Sheets**: multisample editor, tag manager, failures sheet (not yet seen in either scheme).
+- **Icon**: Finder and Dock show the dot field; Finder list view (16 px) shows the pixel S; check on a light and a dark desktop.
+

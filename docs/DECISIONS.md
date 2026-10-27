@@ -27,3 +27,14 @@ Swift end-to-end embeddings (51 files): min cosine 0.99870 (the 22.05 kHz file, 
 
 ## Drag-out (2026-10-25)
 - `NSItemProvider(contentsOf:)` made SwiftUI hand out a cached copy (Finder name "Waveform audio", DAW path under `~/Library/Caches/com.apple.SwiftUI.Drag-…`). Now `NSItemProvider(object: url as NSURL)` with `suggestedName`. Unverified in Finder/DAW until the owner re-tests.
+
+## Signal Grid theme, appearance and accent (2026-10-25)
+- Design in `docs/DESIGN.md`. Theme the native views (Table, NavigationSplitView, Form), do not rebuild them.
+- **Accent is fixed orange.** `.tint` alone does not reach the Table selection (spike: stayed system blue); an `AccentColor` asset with dark `#FF5A1F` and light `#E9440E` does, and the spectrogram reads the token instead of `controlAccentColor`. Caveat: macOS honours the asset only while the system accent is Multicolor.
+- **Light signal is `#E9440E`, not `#FF5A1F`**: 2.7:1 against the light ground, below the 3:1 target. `signalText` on light is `#B93705` (4.5:1 on every ground). Enforced by `ThemeTokensTests`.
+- **Appearance** is a preference (`appearance`: system, light, dark) applied through `NSApp.appearance`, so every window and the AppKit table follow. Tokens are dynamic colours; views do not branch on the scheme except where pixels are baked (map raster, spectrogram), which key their render on `colorScheme`.
+- **Cluster colours** stay as stored. The display colour is derived per scheme (`legible(on:)`: same hue, lightness moved until 3:1 against the window ground). New libraries are seeded with the LED set (no migration; existing libraries keep their colours).
+- **Table cells use `.secondary`, not a fixed grey**, so text stays readable on the orange selection.
+- **Icon** is drawn by `tools/make_icon.swift` (`make icon`), 3×5 pixel S at 32 px and below.
+- Dev aids: `SONDR_APPEARANCE=light|dark|system`; `SONDR_SNAPSHOT` now activates the window and focuses the table so the selection is drawn active. Launch arguments `-showSoundMap YES -explorerTab map|axes` open the explorer without touching saved preferences.
+
