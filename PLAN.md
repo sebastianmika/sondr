@@ -40,7 +40,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Waveform and spectrogram use `signal` (replace `accentRGB(for:)`), re-render on appearance change. Transport button, hairline metadata grid, "closest in sound" with LED meters.
    - Verify: snapshots; flip appearance with a sample open, spectrogram updates.
 
-7. **Map and explorer** (M)
+7. **Map and explorer** (M) — DONE
    - Ground = `window` token, selection ring `text`, drag rectangle `signal`, hover label. Feed `denseTable` through the per-scheme legibility rule; re-render raster on appearance change. Parallel coordinates and Explore panel get the same tokens.
    - Verify: snapshots with a test library (`sondr-testlib ... --fake --clustered --map`) in both schemes; dim clusters stay visible on the light ground.
 

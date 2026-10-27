@@ -7,6 +7,7 @@ import SwiftUI
 struct MapCanvasView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.colorScheme) private var colorScheme
     let browse: BrowseModel
     @Binding var selection: Set<Int64>
     @State private var viewport: MapViewport?
@@ -42,7 +43,7 @@ struct MapCanvasView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Color.secondary.opacity(0.06)
+            Theme.window
             Group {
                 if let map, dots != nil {
                     canvas(map)
@@ -122,12 +123,14 @@ struct MapCanvasView: View {
         let centreY: Float
         let scale: Float
         let displayScale: CGFloat
+        let colorScheme: ColorScheme
     }
 
     private var renderKey: RenderKey {
         RenderKey(
             revision: map?.revision ?? 0, showsPreview: showsPreview, highlight: browse.highlightRevision, colours: app.clusters.map(\.color), size: size,
-            centreX: effective.centre.x, centreY: effective.centre.y, scale: effective.scale, displayScale: displayScale)
+            centreX: effective.centre.x, centreY: effective.centre.y, scale: effective.scale, displayScale: displayScale,
+            colorScheme: colorScheme)
     }
 
     private func computeFit() async {
@@ -148,7 +151,9 @@ struct MapCanvasView: View {
         let width = Int(size.width * displayScale), height = Int(size.height * displayScale)
         let scaled = MapViewport(centre: effective.centre, scale: effective.scale * ratio)
         let highlight = showsPreview ? nil : browse.highlight
-        let colours = app.palette.denseTable
+        // Colours are baked into the picture, so they are made legible for the current ground here and the picture is redrawn when the scheme changes.
+        let ground = ThemeTokens.clusterGround.value(for: Theme.scheme(colorScheme))
+        let colours = app.palette.denseTable.map { $0.legible(on: ground) }
         let bytes = await Task.detached(priority: .userInitiated) {
             MapRaster.render(dots, colours: colours, viewport: scaled, width: width, height: height, highlight: highlight, radius: nil)
         }.value
@@ -170,19 +175,20 @@ struct MapCanvasView: View {
             ForEach(selectedIndices.prefix(60), id: \.self) { index in
                 if let dots, index < dots.count {
                     let p = effective.toPixel(SIMD2(dots.x[index], dots.y[index]), size: SIMD2(Float(size.width), Float(size.height)))
-                    Circle().strokeBorder(Color.primary, lineWidth: 2).background(Circle().fill(.clear))
+                    Circle().strokeBorder(Theme.text, lineWidth: 2).background(Circle().fill(.clear))
                         .frame(width: 14, height: 14).position(x: CGFloat(p.x), y: CGFloat(p.y)).allowsHitTesting(false)
                 }
             }
             if let rect = dragRect {
                 let frame = CGRect(
                     x: min(rect.0.x, rect.1.x), y: min(rect.0.y, rect.1.y), width: abs(rect.0.x - rect.1.x), height: abs(rect.0.y - rect.1.y))
-                Rectangle().fill(Color.accentColor.opacity(0.12)).overlay(Rectangle().stroke(Color.accentColor, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                Rectangle().fill(Theme.signal.opacity(0.12)).overlay(Rectangle().stroke(Theme.signal, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
                     .frame(width: frame.width, height: frame.height).position(x: frame.midX, y: frame.midY).allowsHitTesting(false)
             }
             if let hover, let dots, hover.index < dots.count {
                 Text(hoverName ?? " ").font(.caption).padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 4))
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 2))
+                    .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Theme.hairline, lineWidth: 1))
                     .fixedSize().position(x: min(hover.point.x + 14 + 70, size.width - 70), y: max(hover.point.y - 14, 12))
                     .opacity(hoverName == nil ? 0 : 1).allowsHitTesting(false)
             }
@@ -295,7 +301,7 @@ struct MapCanvasView: View {
             Spacer(minLength: 0)
             HStack {
                 if let dots {
-                    Text("\(dots.count.formatted()) samples").font(.caption).foregroundStyle(.secondary)
+                    Text("\(dots.count.formatted()) samples").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
                 }
                 if let hint = map.rebuildHint, !showLayout {
                     Label("Library has grown. Rebuild?", systemImage: "arrow.triangle.2.circlepath").font(.caption)
@@ -310,15 +316,15 @@ struct MapCanvasView: View {
 
     @ViewBuilder private func statusChip(_ map: MapModel) -> some View {
         if showsPreview {
-            chip(map.phase == .previewing ? "Preview, not saved" : "Computing preview…", tint: .accentColor)
+            chip(map.phase == .previewing ? "Preview, not saved" : "Computing preview…", tint: Theme.signal, text: Theme.onSignal)
         } else if map.isTuning, map.previewDots != nil, comparing || optionHeld {
             chip("Current map", tint: .secondary)
         }
     }
 
-    private func chip(_ text: String, tint: Color) -> some View {
-        Text(text).font(.caption.bold()).foregroundStyle(.white).padding(.horizontal, 8).padding(.vertical, 3)
-            .background(tint, in: Capsule())
+    private func chip(_ text: String, tint: Color, text textColor: Color = .white) -> some View {
+        Text(text).font(.caption.bold()).foregroundStyle(textColor).padding(.horizontal, 8).padding(.vertical, 3)
+            .background(tint, in: RoundedRectangle(cornerRadius: 2))
     }
 }
 

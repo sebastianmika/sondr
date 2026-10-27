@@ -43,27 +43,27 @@ struct ParallelCoordinatesView: View {
             }
             let brushed = !browse.filter.dimRanges.isEmpty
             draw(context, color: .secondary.opacity(brushed ? 0.07 : 0.14))
-            if brushed { draw(matching, color: .accentColor.opacity(0.25)) }
+            if brushed { draw(matching, color: Theme.signal.opacity(0.25)) }
 
             for (i, dim) in dims.enumerated() {
                 canvas.stroke(Path { $0.move(to: CGPoint(x: x(i), y: plot.minY)); $0.addLine(to: CGPoint(x: x(i), y: plot.maxY)) },
                     with: .color(.secondary), lineWidth: 1)
-                canvas.draw(Text(dim.rawValue.capitalized).font(.caption2).foregroundStyle(.secondary),
+                canvas.draw(Text(dim.rawValue.uppercased()).font(.sondrMono(size: 9)).foregroundStyle(.secondary),
                     at: CGPoint(x: x(i), y: topInset / 2), anchor: .center)
                 let range = live?.dim == dim ? live?.range : browse.filter.dimRanges[dim]
                 if let range {
                     let rect = CGRect(x: x(i) - 5, y: y(range.upperBound), width: 10, height: max(y(range.lowerBound) - y(range.upperBound), 2))
-                    canvas.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(.accentColor.opacity(0.55)))
+                    canvas.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(Theme.signal.opacity(0.55)))
                 }
             }
         }
         .overlay(alignment: .bottomTrailing) {
             if let total = (browse.filter.dimRanges.isEmpty ? context : matching)?.total {
-                Text("\(total) samples with sound data").font(.caption2).foregroundStyle(.secondary).padding(4)
+                Text("\(total) samples with sound data").font(.sondrMono(size: 10)).foregroundStyle(Theme.textDim).padding(4)
             }
         }
         .gesture(brushGesture)
-        .background(Color.secondary.opacity(0.05))
+        .background(Theme.window)
         .background(GeometryReader { proxy in Color.clear.onAppear { canvasSize = proxy.size }.onChange(of: proxy.size) { _, new in canvasSize = new } })
         .task(id: Key(filter: browse.filter, version: app.libraryVersion)) { await load() }
         .help("Drag on an axis to keep only samples in that range. Click an axis to clear it.")

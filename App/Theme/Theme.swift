@@ -16,6 +16,8 @@ enum Theme {
     static let signalText = colour(ThemeTokens.signalText)
     static let onSignal = colour(ThemeTokens.onSignal)
 
+    static func scheme(_ colorScheme: ColorScheme) -> ThemeScheme { colorScheme == .dark ? .dark : .light }
+
     /// The scheme the given appearance resolves to.
     static func scheme(of appearance: NSAppearance) -> ThemeScheme {
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
