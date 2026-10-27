@@ -8,6 +8,7 @@ enum SidebarItem: Hashable {
 
 struct SidebarView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.openSettings) private var openSettings
     @Binding var selection: SidebarItem?
     let browse: BrowseModel
     @Binding var showingFailures: Bool
@@ -23,7 +24,7 @@ struct SidebarView: View {
                     row("Unsorted", count: app.unsortedCount) { Image(systemName: "questionmark.folder") }
                         .tag(SidebarItem.unsorted)
                 } header: {
-                    Text("Library").sondrLabel()
+                    header("Library") { openSettings(tab: "locations") }
                 }
                 Section {
                     ForEach(app.clusters) { cluster in
@@ -31,7 +32,7 @@ struct SidebarView: View {
                             .tag(SidebarItem.cluster(cluster.id))
                     }
                 } header: {
-                    Text("Clusters").sondrLabel()
+                    header("Clusters") { openSettings(tab: "clusters") }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -49,13 +50,7 @@ struct SidebarView: View {
     /// Tag header with search and manage link; only the tag list scrolls.
     private var tagPanel: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Tags").sondrLabel()
-                Spacer()
-                Button("Manage tags") { managingTags = true }
-                    .buttonStyle(.link)
-                    .font(.caption)
-            }
+            header("Tags") { managingTags = true }
             TextField("Search tags", text: $tagSearch)
                 .textFieldStyle(.roundedBorder)
                 .controlSize(.small)
@@ -66,6 +61,22 @@ struct SidebarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+    }
+
+    /// Section title with a small "Manage…" link; the same for every section.
+    private func header(_ title: String, manage: @escaping () -> Void) -> some View {
+        HStack {
+            Text(title).sondrLabel()
+            Spacer()
+            Button("Manage…", action: manage)
+                .buttonStyle(.link)
+                .font(.caption)
+        }
+    }
+
+    private func openSettings(tab: String) {
+        UserDefaults.standard.set(tab, forKey: Preferences.settingsTab)
+        openSettings()
     }
 
     /// A sidebar row: icon, name, count in mono.
