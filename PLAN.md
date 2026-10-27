@@ -48,7 +48,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Tint, fonts, Clusters colour well shows both-scheme preview of the chosen colour. Multisample editor, tag manager, failures sheet checked.
    - Verify: snapshot every Settings tab (`SONDR_SETTINGS_TAB`) in both schemes.
 
-9. **Seed colours and app icon** (M)
+9. **Seed colours and app icon** (M) — DONE (Swift script, no rsvg)
    - `clusters.json` seed colours switch to the LED set (no migration, existing libraries untouched). `design/icon.svg` master, `make icon` renders the `AppIcon` set (needs a rasteriser; see questions), `project.yml` gets the catalog and `ASSETCATALOG_COMPILER_APPICON_NAME`.
    - Verify: built app shows the icon in Finder/Dock; look at 16, 32, 128 px; if the dim dots vanish at 16/32 px, add a simplified small-size variant.
 

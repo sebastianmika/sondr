@@ -3,7 +3,7 @@
 
 DERIVED = build
 
-.PHONY: debug release run-debug run-release project clean reset
+.PHONY: debug release run-debug run-release project clean reset icon
 
 project:
 	@echo "Sondr: building in $(CURDIR)"
@@ -22,6 +22,10 @@ run-debug: debug
 
 run-release: release
 	open $(DERIVED)/Release/Build/Products/Release/Sondr.app
+
+# Redraw the app icon PNGs (tools/make_icon.swift is the only source of the icon).
+icon:
+	swift tools/make_icon.swift
 
 clean:
 	rm -rf $(DERIVED)
