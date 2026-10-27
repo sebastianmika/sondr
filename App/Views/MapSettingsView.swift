@@ -217,7 +217,7 @@ struct ParameterRow<Control: View>: View {
             HStack {
                 Text(title)
                 Spacer()
-                Text(value).monospacedDigit().foregroundStyle(.secondary)
+                Text(value).font(.sondrMono(size: 12)).foregroundStyle(.secondary)
             }
             control
             Text(explanation).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)

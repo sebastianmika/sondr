@@ -23,7 +23,7 @@ struct TagManagerView: View {
             TextField("Filter tags", text: $query).textFieldStyle(.roundedBorder)
             Table(shown, selection: $selected) {
                 TableColumn("Tag", value: \.name)
-                TableColumn("Samples") { Text("\($0.count)").monospacedDigit() }.width(80)
+                TableColumn("Samples") { Text("\($0.count)").font(.sondrMono(size: 12)) }.width(80)
             }
             .frame(minHeight: 260)
             HStack {

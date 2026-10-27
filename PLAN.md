@@ -44,7 +44,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Ground = `window` token, selection ring `text`, drag rectangle `signal`, hover label. Feed `denseTable` through the per-scheme legibility rule; re-render raster on appearance change. Parallel coordinates and Explore panel get the same tokens.
    - Verify: snapshots with a test library (`sondr-testlib ... --fake --clustered --map`) in both schemes; dim clusters stay visible on the light ground.
 
-8. **Settings, sheets, editors** (S)
+8. **Settings, sheets, editors** (S) — DONE (colour-well preview cut)
    - Tint, fonts, Clusters colour well shows both-scheme preview of the chosen colour. Multisample editor, tag manager, failures sheet checked.
    - Verify: snapshot every Settings tab (`SONDR_SETTINGS_TAB`) in both schemes.
 

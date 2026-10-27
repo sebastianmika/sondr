@@ -92,7 +92,7 @@ private struct ClusterRow: View {
             TextField("Name", text: $row.name, prompt: Text("Name")).labelsHidden().frame(width: 120)
             TextField("Description", text: $row.keywords, prompt: Text("Description, embedded by CLAP and compared with each sound"))
                 .labelsHidden()
-            Text(count.map { "\($0.formatted())" } ?? "new").font(.caption).foregroundStyle(.secondary)
+            Text(count.map { "\($0.formatted())" } ?? "new").font(.sondrMono(size: 11)).foregroundStyle(.secondary)
                 .frame(width: 44, alignment: .trailing).help("Samples in this cluster")
             Button("Delete", systemImage: "trash", action: delete)
                 .labelStyle(.iconOnly).buttonStyle(.borderless)

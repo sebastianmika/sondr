@@ -343,7 +343,7 @@ struct LocationEditor: View {
                         let ignored = row.blockedBy != nil
                         Text(row.tag).strikethrough(ignored).foregroundStyle(ignored ? .secondary : .primary)
                     }.width(min: 90, ideal: 140)
-                    TableColumn("Files") { Text($0.count.formatted()).monospacedDigit() }.width(60)
+                    TableColumn("Files") { Text($0.count.formatted()).font(.sondrMono(size: 12)) }.width(60)
                     TableColumn("Example") { Text($0.example).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary) }
                     TableColumn("") { row in
                         if let rule = row.blockedBy {
