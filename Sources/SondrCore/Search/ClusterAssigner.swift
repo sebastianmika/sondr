@@ -8,7 +8,7 @@ import GRDB
 public enum ClusterAssigner {
     /// Scores below this are shown as "unsorted". Provisional: chosen on the synthetic fixtures
     /// only, see docs/DECISIONS.md (Story 3.3).
-    public static let unsortedThreshold: Float = 0.30
+    public static let unsortedThreshold: Float = 0.22
 
     /// Samples per transaction when assigning in bulk.
     public static let chunkSize = 2048

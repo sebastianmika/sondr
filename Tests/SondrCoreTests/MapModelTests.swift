@@ -23,7 +23,7 @@ import simd
         let dots = try MapDots.load(db, mapID: mapID)
         #expect(dots.count == 5)
         #expect(dots.ids == ids.sorted())
-        #expect(dots.cluster == [2, -1, 0, -1, -1], "cluster, unsorted (weak), kept (above 0.30), none, none")
+        #expect(dots.cluster == [2, -1, 0, -1, -1], "cluster, unsorted (weak), kept (above 0.22), none, none")
         #expect(dots.fitted == [true, false, false, false, false])
         #expect(dots.x == [0, 1, 2, 3, 4] && dots.y == [0, 2, 4, 6, 8])
     }
