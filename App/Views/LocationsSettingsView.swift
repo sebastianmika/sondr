@@ -23,6 +23,11 @@ struct LocationsSettingsView: View {
                     Button("Add Location…") { importing = true }.disabled(busy)
                     Button("Rescan All") { Task { await app.rescanAll() } }
                         .disabled(busy || app.locations.isEmpty)
+                    Button(app.stats.pending > 0 ? "Index \(app.stats.pending.formatted())" : "Index") {
+                        Task { await app.startIndexing() }
+                    }
+                    .disabled(busy || app.stats.pending == 0 || !app.modelsAvailable)
+                    .help(app.modelsAvailable ? "Compute embeddings for samples that have none" : "Core ML models not found")
                     if let status = progressText { Text(status).font(.caption).foregroundStyle(.secondary) }
                 }
             }
@@ -283,7 +288,7 @@ struct LocationEditor: View {
         if case .edit(let location) = mode {
             return tagging != location.tagging || cleanedGroupRules != location.multisampleRules || retagCount > 0
         }
-        return !app.isScanning
+        return !(app.isScanning || app.isIndexing || app.isRetagging)
     }
 
     private var rareTagsSection: some View {

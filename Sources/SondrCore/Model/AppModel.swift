@@ -151,9 +151,10 @@ public final class AppModel {
         _ url: URL, tagging: LocationTagging? = nil, multisampleRules: MultisampleRules? = nil,
         dropRareTagsUpTo: Int? = nil
     ) async {
-        await scan(
+        let scanned = await scan(
             url, extensions: nil, maxLength: nil, tagging: tagging, multisampleRules: multisampleRules,
             dropRareTagsUpTo: dropRareTagsUpTo)
+        if scanned && modelsAvailable { await startIndexing() }
     }
 
     /// Scans every known location again, one after the other.
@@ -172,9 +173,12 @@ public final class AppModel {
         await scan(URL(fileURLWithPath: location.path), extensions: extensions, maxLength: location.maxLength)
     }
 
+    /// Returns whether the scan ran to the end.
+    @discardableResult
     private func scan(_ url: URL, extensions: Set<String>?, maxLength: Double?, tagging: LocationTagging? = nil,
-        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil) async {
-        guard let database, !isScanning, !isIndexing, !isRetagging else { return }
+        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil) async -> Bool {
+        guard let database, !isScanning, !isIndexing, !isRetagging else { return false }
+        var completed = false
         scanStatus = ScanStatus(location: url.path, progress: nil)
         defer { scanStatus = nil }
         do {
@@ -186,10 +190,12 @@ public final class AppModel {
             try await vectorIndex.load(from: database)  // files that vanished leave the index
             await regroup()
             message = "Scanned \(url.lastPathComponent): \(summary.new) new, \(summary.duplicate) duplicates, \(summary.errors) unreadable."
+            completed = true
         } catch {
             message = error.localizedDescription
         }
         await refresh()
+        return completed
     }
 
     /// Removes a location from the library. Audio files are not touched.
