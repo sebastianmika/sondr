@@ -72,7 +72,7 @@ private struct Workspace {
 @MainActor @Test func addingAFolderScansItAndUpdatesTheNumbers() async throws {
     let work = try Workspace(files: 30)
     defer { work.remove() }
-    let app = work.model()
+    let app = work.model(embedder: nil)
     await app.start()
     let version = app.libraryVersion
 
@@ -94,8 +94,6 @@ private struct Workspace {
     await app.start()
     await app.addLocation(work.library)
 
-    await app.startIndexing()
-
     #expect(app.stats.indexed == 24)
     #expect(app.stats.pending == 0)
     #expect(await app.vectorIndex.count == 24)
@@ -103,6 +101,60 @@ private struct Workspace {
     #expect(app.lastIndexSummary?.done == 24)
     #expect(app.clusters.count == (try ClusterCentres.seed().count))
     #expect(app.clusters.map(\.count).reduce(0, +) + app.unsortedCount == 24)
+}
+
+@MainActor @Test func locationNameDefaultsToTheFolderAndCanBeChanged() async throws {
+    let work = try Workspace(files: 3)
+    defer { work.remove() }
+    let app = work.model(embedder: nil)
+    await app.start()
+
+    await app.addLocation(work.library)
+    #expect(app.locations.first?.name == work.library.lastPathComponent)
+
+    await app.renameLocation(app.locations[0], to: "Mini Moog")
+    #expect(app.locations.first?.name == "Mini Moog")
+
+    await app.rescan(app.locations[0])
+    #expect(app.locations.first?.name == "Mini Moog")
+
+    await app.renameLocation(app.locations[0], to: "  ")
+    #expect(app.locations.first?.name == work.library.lastPathComponent)
+}
+
+@MainActor @Test func addingAKnownFolderAgainWithANameRenamesIt() async throws {
+    let work = try Workspace(files: 3)
+    defer { work.remove() }
+    let app = work.model(embedder: nil)
+    await app.start()
+    await app.addLocation(work.library, name: "909")
+
+    await app.addLocation(work.library, name: "808")
+
+    #expect(app.locations.map(\.name) == ["808"])
+}
+
+@MainActor @Test func addingAFolderWithANameKeepsIt() async throws {
+    let work = try Workspace(files: 3)
+    defer { work.remove() }
+    let app = work.model(embedder: nil)
+    await app.start()
+
+    await app.addLocation(work.library, name: "909")
+
+    #expect(app.locations.first?.name == "909")
+}
+
+@MainActor @Test func addingAFolderIndexesItRightAway() async throws {
+    let work = try Workspace(files: 6)
+    defer { work.remove() }
+    let app = work.model()
+    await app.start()
+
+    await app.addLocation(work.library)
+
+    #expect(app.stats.indexed == 6)
+    #expect(app.stats.pending == 0)
 }
 
 @MainActor @Test func reopeningTheLibraryRestoresTheIndex() async throws {
@@ -436,6 +488,9 @@ private struct Workspace {
     await app.addLocation(work.library)
     let victim = try await app.database!.writer.read { try String.fetchOne($0, sql: "SELECT canonical_path FROM samples ORDER BY id LIMIT 1")! }
     try Data("garbage".utf8).write(to: URL(fileURLWithPath: victim))
+    try await app.database!.writer.write {
+        try $0.execute(sql: "UPDATE samples SET embed_state = 'pending' WHERE canonical_path = ?", arguments: [victim])
+    }
     await app.startIndexing()
     #expect(app.stats.failed == 1)
 
@@ -536,6 +591,31 @@ private func row(id: Int64 = 1, path: String, name: String) -> SampleRow {
     await app.deleteTag("drum")
     #expect(!app.tagCounts.contains { $0.name == "drum" })
     #expect(await app.allTags().contains { $0.name == "drum" } == false)
+}
+
+@MainActor @Test func severalTagsCanBeMergedOrDeletedAtOnce() async throws {
+    let work = try Workspace(files: 6)
+    defer { work.remove() }
+    let app = work.model(embedder: nil)
+    await app.start()
+    await app.addLocation(work.library)
+    let ids = try await app.database!.writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples") }
+    for name in ["aa", "bb", "cc", "dd"] { await app.addTag(name, to: ids) }
+
+    await app.mergeTags(["aa", "bb", "cc"], into: "cc")  // the target may be in the list
+    let names = await app.allTags().map(\.name)
+    #expect(!names.contains("aa") && !names.contains("bb"))
+    #expect(app.tagCounts.first { $0.name == "cc" }?.count == 6)
+
+    await app.deleteTags(["cc", "dd"])
+    let left = await app.allTags().map(\.name)
+    #expect(!left.contains("cc") && !left.contains("dd"))
+
+    await app.addTag("ee", to: ids)
+    await app.mergeTags(["ee", "nothere"], into: "x")  // fails as a whole: "ee" is not merged
+    #expect(app.message != nil)
+    let after = await app.allTags().map(\.name)
+    #expect(after.contains("ee") && !after.contains("x"))
 }
 
 @MainActor @Test func theMapModelExistsOnceTheLibraryIsOpen() async throws {

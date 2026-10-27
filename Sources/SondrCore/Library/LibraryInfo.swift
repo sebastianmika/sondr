@@ -12,6 +12,8 @@ public struct LibraryStats: Equatable, Sendable {
 public struct LocationInfo: Equatable, Sendable, Identifiable {
     public let id: Int64
     public let path: String
+    /// What the user calls this location; the folder's name until they pick one.
+    public let name: String
     public let typeFilter: String?
     public let maxLength: Double?
     public let tagging: LocationTagging
@@ -42,18 +44,25 @@ public enum LibraryInfo {
         try Row.fetchAll(
             db,
             sql: """
-                SELECT locations.id, locations.path, locations.type_filter, locations.max_length,
+                SELECT locations.id, locations.path, locations.name, locations.type_filter, locations.max_length,
                     locations.extra_tags, locations.tag_rules, locations.group_rules,
                     (SELECT count(DISTINCT sample_id) FROM sample_paths WHERE location_id = locations.id) AS n
-                FROM locations ORDER BY locations.path COLLATE NOCASE
+                FROM locations
                 """
         ).map {
             LocationInfo(
-                id: $0["id"], path: $0["path"], typeFilter: $0["type_filter"], maxLength: $0["max_length"],
+                id: $0["id"], path: $0["path"],
+                name: LibraryInfo.displayName($0["name"], path: $0["path"]), typeFilter: $0["type_filter"], maxLength: $0["max_length"],
                 tagging: TaggingStore.tagging(extraTags: $0["extra_tags"], rules: $0["tag_rules"]),
                 multisampleRules: MultisampleStore.decode($0["group_rules"]),
                 sampleCount: $0["n"])
-        }
+        }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    /// The stored name, or the folder's name when none is stored or it is blank.
+    static func displayName(_ name: String?, path: String) -> String {
+        let trimmed = name?.trimmingCharacters(in: .whitespaces) ?? ""
+        return trimmed.isEmpty ? URL(fileURLWithPath: path).lastPathComponent : trimmed
     }
 
     /// Every path a sample has, with the folder it was found in.

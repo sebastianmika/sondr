@@ -56,6 +56,7 @@ public final class LibraryDatabase: Sendable {
         CREATE TABLE locations (
             id INTEGER PRIMARY KEY,
             path TEXT NOT NULL UNIQUE,
+            name TEXT,
             type_filter TEXT,
             max_length REAL,
             added_at REAL NOT NULL,

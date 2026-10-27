@@ -85,13 +85,14 @@ public actor LibraryScanner {
     ///   - maxLength: Skip files longer than this many seconds; `nil` for no limit. Stored on the location.
     ///   - tagging: Extra tags and blacklist for this location; stored on it. `nil` keeps what is stored.
     ///   - multisampleRules: Which folders may form multisample groups; stored on the location. `nil` keeps what is stored.
+    ///   - name: Display name for the location; `nil` keeps the stored name (a new location then shows its folder name).
     ///   - dropRareTagsUpTo: When set, the location's auto tags used by this many samples or fewer, or by under 1% of
     ///     them, are removed after the scan (see ``LibraryTags/dropRare(_:locationID:upTo:keeping:)``). For adding a location.
     ///   - progress: Called after the file walk and after every batch.
     /// - Throws: ``ScanError``, ``JobError/alreadyRunning(_:)``, ``TagRuleError`` or a database error.
     public func scan(
         root: URL, extensions: Set<String>? = nil, maxLength: Double? = nil, tagging: LocationTagging? = nil,
-        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil,
+        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil, name: String? = nil,
         progress: (@Sendable (ScanProgress) -> Void)? = nil
     ) async throws -> ScanSummary
     {
@@ -108,12 +109,12 @@ public actor LibraryScanner {
         let locationID = try await database.writer.write { db -> Int64 in
             try db.execute(
                 sql: """
-                    INSERT INTO locations (path, type_filter, max_length, added_at) VALUES (?, ?, ?, ?)
+                    INSERT INTO locations (path, name, type_filter, max_length, added_at) VALUES (?, ?, ?, ?, ?)
                     ON CONFLICT(path) DO UPDATE SET type_filter = excluded.type_filter,
-                        max_length = excluded.max_length
+                        max_length = excluded.max_length, name = coalesce(excluded.name, name)
                     """,
                 arguments: [
-                    root.path, extensions.map { $0.sorted().joined(separator: ",") }, maxLength,
+                    root.path, name, extensions.map { $0.sorted().joined(separator: ",") }, maxLength,
                     Date().timeIntervalSince1970,
                 ])
             let id = try Int64.fetchOne(db, sql: "SELECT id FROM locations WHERE path = ?", arguments: [root.path])!

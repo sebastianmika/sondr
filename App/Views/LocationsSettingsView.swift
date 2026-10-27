@@ -49,7 +49,7 @@ struct LocationsSettingsView: View {
         }
         .sheet(item: $reviewing) { MultisampleEditorView(location: $0) }
         .confirmationDialog(
-            "Remove “\(removing.map { URL(fileURLWithPath: $0.path).lastPathComponent } ?? "")” from the library?",
+            "Remove “\(removing?.name ?? "")” from the library?",
             isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
         ) { location in
             Button("Remove from Library", role: .destructive) { Task { await app.removeLocation(location) } }
@@ -77,7 +77,7 @@ private struct LocationRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Label(URL(fileURLWithPath: location.path).lastPathComponent, systemImage: "folder")
+                Label(location.name, systemImage: "folder")
                 Spacer()
                 Text("\(location.sampleCount.formatted()) samples").foregroundStyle(.secondary)
             }
@@ -194,6 +194,7 @@ struct LocationEditor: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     let mode: Mode
+    @State private var name = ""
     @State private var extraText = ""
     @State private var rules: [TagRule] = []
     @State private var groupRules = MultisampleRules()
@@ -230,6 +231,7 @@ struct LocationEditor: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title).font(.headline)
             Text(mode.folder.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+            TextField("Name", text: $name, prompt: Text("e.g. 909, Mini Moog"))
 
             // Only this part scrolls, so the buttons stay in the window however many rules are added.
             ScrollView {
@@ -286,7 +288,7 @@ struct LocationEditor: View {
 
     private var canCommit: Bool {
         if case .edit(let location) = mode {
-            return tagging != location.tagging || cleanedGroupRules != location.multisampleRules || retagCount > 0
+            return name != location.name || tagging != location.tagging || cleanedGroupRules != location.multisampleRules || retagCount > 0
         }
         return !(app.isScanning || app.isIndexing || app.isRetagging)
     }
@@ -368,6 +370,10 @@ struct LocationEditor: View {
     }
 
     private func load() async {
+        switch mode {
+        case .add(let url): name = url.lastPathComponent
+        case .edit(let location): name = location.name
+        }
         if case .edit(let location) = mode {
             extraText = location.tagging.extraTags.joined(separator: ", ")
             rules = location.tagging.rules
@@ -389,12 +395,17 @@ struct LocationEditor: View {
     private func commit() async {
         let tagging = tagging
         let groupRules = cleanedGroupRules
+        let dropRareUpTo = dropRareUpTo
+        let name = name
         switch mode {
         case .add(let url):
             dismiss()
-            await app.addLocation(url, tagging: tagging, multisampleRules: groupRules, dropRareTagsUpTo: dropRareUpTo)
+            // The untouched default must not overwrite the custom name of a folder that is already a location.
+            let given = name == url.lastPathComponent ? nil : name
+            await app.addLocation(url, tagging: tagging, multisampleRules: groupRules, dropRareTagsUpTo: dropRareUpTo, name: given)
         case .edit(let location):
             dismiss()
+            if name != location.name { await app.renameLocation(location, to: name) }
             if tagging != location.tagging || retagCount > 0 { await app.updateLocation(location, tagging: tagging) }
             if groupRules != location.multisampleRules { await app.updateMultisampleRules(location, rules: groupRules) }
         }

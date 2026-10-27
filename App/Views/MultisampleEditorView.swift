@@ -30,7 +30,7 @@ struct MultisampleEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Multisamples in \(URL(fileURLWithPath: location.path).lastPathComponent)").font(.headline)
+            Text("Multisamples in \(location.name)").font(.headline)
             HSplitView {
                 List(groups, selection: $selected) { info in
                     HStack {

@@ -149,11 +149,11 @@ public final class AppModel {
     /// them, are removed.
     public func addLocation(
         _ url: URL, tagging: LocationTagging? = nil, multisampleRules: MultisampleRules? = nil,
-        dropRareTagsUpTo: Int? = nil
+        dropRareTagsUpTo: Int? = nil, name: String? = nil
     ) async {
         let scanned = await scan(
             url, extensions: nil, maxLength: nil, tagging: tagging, multisampleRules: multisampleRules,
-            dropRareTagsUpTo: dropRareTagsUpTo)
+            dropRareTagsUpTo: dropRareTagsUpTo, name: name)
         if scanned && modelsAvailable { await startIndexing() }
     }
 
@@ -176,14 +176,14 @@ public final class AppModel {
     /// Returns whether the scan ran to the end.
     @discardableResult
     private func scan(_ url: URL, extensions: Set<String>?, maxLength: Double?, tagging: LocationTagging? = nil,
-        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil) async -> Bool {
+        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil, name: String? = nil) async -> Bool {
         guard let database, !isScanning, !isIndexing, !isRetagging else { return false }
         var completed = false
         scanStatus = ScanStatus(location: url.path, progress: nil)
         defer { scanStatus = nil }
         do {
             let scanner = try LibraryScanner(database: database)
-            let summary = try await scanner.scan(root: url, extensions: extensions, maxLength: maxLength, tagging: tagging, multisampleRules: multisampleRules, dropRareTagsUpTo: dropRareTagsUpTo) { [weak self] progress in
+            let summary = try await scanner.scan(root: url, extensions: extensions, maxLength: maxLength, tagging: tagging, multisampleRules: multisampleRules, dropRareTagsUpTo: dropRareTagsUpTo, name: name) { [weak self] progress in
                 Task { @MainActor [weak self] in self?.scanStatus?.progress = progress }
             }
             lastScanSummary = summary
@@ -196,6 +196,22 @@ public final class AppModel {
         }
         await refresh()
         return completed
+    }
+
+    /// Gives a location a new display name; a blank name goes back to the folder's name.
+    public func renameLocation(_ location: LocationInfo, to name: String) async {
+        guard let database else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        do {
+            try await database.writer.write {
+                try $0.execute(
+                    sql: "UPDATE locations SET name = ? WHERE id = ?",
+                    arguments: [trimmed.isEmpty ? nil : trimmed, location.id])
+            }
+        } catch {
+            message = error.localizedDescription
+        }
+        await refresh(reloadLists: false)  // only the location list changes
     }
 
     /// Removes a location from the library. Audio files are not touched.
@@ -354,6 +370,16 @@ public final class AppModel {
 
     public func deleteTag(_ name: String) async {
         await editTags { try LibraryTags.delete($0, name: name) }
+    }
+
+    /// Merges several tags into one in a single transaction: if one fails, none is merged.
+    public func mergeTags(_ sources: [String], into target: String) async {
+        await editTags { db in for source in sources { try LibraryTags.merge(db, source: source, into: target) } }
+    }
+
+    /// Deletes several tags in a single transaction.
+    public func deleteTags(_ names: [String]) async {
+        await editTags { db in for name in names { try LibraryTags.delete(db, name: name) } }
     }
 
     /// Every tag with its use count, most used first (for the tag manager).
