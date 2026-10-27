@@ -40,6 +40,7 @@ private struct SampleDetail: View {
                     Button { playback.toggle(row) } label: {
                         Label(playback.playingID == row.id ? "Stop" : "Play", systemImage: playback.playingID == row.id ? "stop.fill" : "play.fill")
                     }
+                    .buttonStyle(SignalButtonStyle())
                     Button { Task { await browse.showSimilar(to: row) } } label: {
                         Label("Find Similar", systemImage: "waveform.badge.magnifyingglass")
                     }
@@ -53,13 +54,13 @@ private struct SampleDetail: View {
                 }
 
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
-                    GridRow { Text("Length").foregroundStyle(.secondary); Text(formatDuration(row.duration)) }
-                    GridRow { Text("Format").foregroundStyle(.secondary); Text("\(row.format.uppercased()), \(Int(row.sampleRate)) Hz, \(row.channels == 1 ? "mono" : "\(row.channels) ch")") }
+                    GridRow { Text("Length").foregroundStyle(.secondary); Text(formatDuration(row.duration)).font(.sondrMono(size: 12)) }
+                    GridRow { Text("Format").foregroundStyle(.secondary); Text("\(row.format.uppercased()), \(Int(row.sampleRate)) Hz, \(row.channels == 1 ? "mono" : "\(row.channels) ch")").font(.sondrMono(size: 12)) }
                     GridRow {
                         Text("Cluster").foregroundStyle(.secondary)
                         Text(clusterText)
                     }
-                    GridRow { Text("State").foregroundStyle(.secondary); Text(row.embedState) }
+                    GridRow { Text("State").foregroundStyle(.secondary); Text(row.embedState).font(.sondrMono(size: 12)) }
                 }
                 .font(.callout)
 
@@ -73,8 +74,8 @@ private struct SampleDetail: View {
                             ForEach(Array(Dim.allCases.enumerated()), id: \.offset) { index, dim in
                                 let value = ranges[dim]?.normalise(dims[index]) ?? dims[index]
                                 HStack {
-                                    Text(dim.rawValue.capitalized).font(.caption).frame(width: 90, alignment: .leading)
-                                    ProgressView(value: min(max(value, 0), 1))
+                                    Text(dim.rawValue).sondrLabel().frame(width: 118, alignment: .leading)
+                                    LEDProgress(value: min(max(value, 0), 1), total: 1)
                                 }
                             }
                         }
@@ -85,7 +86,7 @@ private struct SampleDetail: View {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(paths, id: \.self) { path in
                             HStack(alignment: .top) {
-                                Text(path).font(.caption).textSelection(.enabled).lineLimit(3)
+                                Text(path).font(.sondrMono(size: 10.5)).textSelection(.enabled).lineLimit(3)
                                 Spacer(minLength: 4)
                                 Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) } label: {
                                     Image(systemName: "magnifyingglass.circle")
@@ -135,7 +136,7 @@ private struct SampleDetail: View {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 GridRow {
                     Text(line.0).foregroundStyle(.secondary)
-                    Text(line.1).textSelection(.enabled).lineLimit(4)
+                    Text(line.1).font(.sondrMono(size: 11)).textSelection(.enabled).lineLimit(4)
                 }
             }
         }
@@ -144,7 +145,7 @@ private struct SampleDetail: View {
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.bold()).foregroundStyle(.secondary)
+            Text(title).sondrLabel()
             content()
         }
     }
@@ -153,8 +154,8 @@ private struct SampleDetail: View {
 /// Peaks as vertical bars, with a playhead while the sample plays.
 /// Waveform and spectrogram in one rounded tile with a single playhead across both.
 ///
-/// The spectrogram is the accent colour at an opacity that follows the level, so silence is the
-/// tile itself and the picture follows the system accent and appearance.
+/// The spectrogram is the signal colour at an opacity that follows the level, so silence is the
+/// tile itself. It is baked into pixels, so it is redrawn when the appearance changes.
 struct SoundTile: View {
     let waveform: Data?
     let spectrogram: Data?
@@ -177,13 +178,14 @@ struct SoundTile: View {
         .overlay {
             if let progress {
                 GeometryReader { proxy in
-                    Rectangle().fill(Color.primary.opacity(0.8)).frame(width: 1.5)
+                    Rectangle().fill(Theme.text).frame(width: 1.5)
                         .offset(x: inset + (proxy.size.width - 2 * inset) * progress - 0.75)
                         .padding(.vertical, 4)
                 }
             }
         }
-        .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 2))
+        .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Theme.hairline, lineWidth: 1))
         .help("Waveform on top. Spectrogram below: time left to right, low to high frequency bottom to top.")
     }
 
@@ -193,7 +195,7 @@ struct SoundTile: View {
                 .resizable()
                 .interpolation(.high)
                 .overlay(alignment: .leading) { frequencyAxis }
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .clipShape(RoundedRectangle(cornerRadius: 2))
         } else {
             Text("No spectrogram yet. Press Index.").font(.caption).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -227,15 +229,8 @@ struct SoundTile: View {
     }
 
     static func accentRGB(for scheme: ColorScheme) -> (red: UInt8, green: UInt8, blue: UInt8) {
-        let appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua) ?? NSApp.effectiveAppearance
-        var rgb: (UInt8, UInt8, UInt8) = (47, 111, 237)
-        appearance.performAsCurrentDrawingAppearance {
-            if let colour = NSColor.controlAccentColor.usingColorSpace(.sRGB) {
-                func byte(_ value: CGFloat) -> UInt8 { UInt8((min(max(value, 0), 1) * 255).rounded()) }
-                rgb = (byte(colour.redComponent), byte(colour.greenComponent), byte(colour.blueComponent))
-            }
-        }
-        return (rgb.0, rgb.1, rgb.2)
+        let signal = ThemeTokens.signal.value(for: scheme == .dark ? .dark : .light)
+        return (signal.red, signal.green, signal.blue)
     }
 
     static func image(from thumb: Data?, accent: (red: UInt8, green: UInt8, blue: UInt8)) -> CGImage? {
@@ -250,7 +245,7 @@ struct SoundTile: View {
     }
 }
 
-/// Peak bars; the part already played is drawn in the accent colour. Meant to sit in a ``SoundTile``.
+/// Peak bars; the part already played is drawn in the signal colour. Meant to sit in a ``SoundTile``.
 struct WaveformView: View {
     let thumb: Data?
     let progress: Double?
@@ -267,7 +262,7 @@ struct WaveformView: View {
                 let h = max(1, CGFloat(peak) / 255 * size.height)
                 let rect = CGRect(x: CGFloat(i) * barWidth, y: (size.height - h) / 2, width: max(barWidth - 0.5, 0.5), height: h)
                 let played = progress.map { Double(i) / Double(count) <= $0 } ?? false
-                context.fill(Path(rect), with: .color(played ? .accentColor : .secondary.opacity(0.75)))
+                context.fill(Path(rect), with: .color(played ? Theme.signal : .secondary.opacity(0.75)))
             }
         }
     }
@@ -285,15 +280,15 @@ struct TagEditor: View {
         VStack(alignment: .leading, spacing: 6) {
             FlowLayout(spacing: 4) {
                 ForEach(tags, id: \.self) { tag in
-                    HStack(spacing: 2) {
-                        Text(tag).font(.caption)
+                    HStack(spacing: 4) {
+                        Text(tag).font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textMid)
                         Button { Task { await app.removeTag(tag, from: ids) } } label: {
-                            Image(systemName: "xmark.circle.fill").font(.caption2)
+                            Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
                         }
                         .buttonStyle(.plain).foregroundStyle(.secondary).help("Remove “\(tag)”")
                     }
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.15), in: Capsule())
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Theme.hairline, lineWidth: 1))
                 }
             }
             TextField(ids.count > 1 ? "Add a tag to \(ids.count) samples" : "Add a tag", text: $newTag)

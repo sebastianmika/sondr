@@ -54,3 +54,17 @@ struct TagChip: View {
             .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(active ? Theme.signal : Theme.hairline, lineWidth: 1))
     }
 }
+
+/// The one filled button of a screen (Play): signal fill, dark glyph, 2 pt corners.
+struct SignalButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.body.weight(.medium))
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .foregroundStyle(Theme.onSignal)
+            .background(Theme.signal.opacity(configuration.isPressed ? 0.75 : 1), in: RoundedRectangle(cornerRadius: 2))
+            .opacity(isEnabled ? 1 : 0.4)
+    }
+}

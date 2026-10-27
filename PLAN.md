@@ -36,7 +36,7 @@ Biggest risk: native `Table` selection cannot be drawn like the mockup. Step 0 t
    - Mono columns for length/root/match, dim caps cluster label, banners and toolbar toggles using `signalText` / `signal`, playing indicator.
    - Verify: snapshots both schemes with a selection, a playing row, and a group row (multisample disclosure still works).
 
-6. **Detail pane** (M)
+6. **Detail pane** (M) — DONE
    - Waveform and spectrogram use `signal` (replace `accentRGB(for:)`), re-render on appearance change. Transport button, hairline metadata grid, "closest in sound" with LED meters.
    - Verify: snapshots; flip appearance with a sample open, spectrogram updates.
 
