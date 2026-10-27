@@ -12,39 +12,60 @@ struct SidebarView: View {
     let browse: BrowseModel
     @Binding var showingFailures: Bool
     @State private var managingTags = false
+    @State private var tagSearch = ""
 
     var body: some View {
-        List(selection: $selection) {
-            Section {
-                row("All samples", count: app.stats.samples - app.stats.missing) { Image(systemName: "waveform") }
-                    .tag(SidebarItem.all)
-                row("Unsorted", count: app.unsortedCount) { Image(systemName: "questionmark.folder") }
-                    .tag(SidebarItem.unsorted)
-            } header: {
-                Text("Library").sondrLabel()
-            }
-            Section {
-                ForEach(app.clusters) { cluster in
-                    row(cluster.name, count: cluster.count) { ClusterMarker(color: clusterColor(cluster.id, app.palette)) }
-                        .tag(SidebarItem.cluster(cluster.id))
-                }
-            } header: {
-                Text("Clusters").sondrLabel()
-            }
-            if !app.tagCounts.isEmpty {
+        VSplitView {
+            List(selection: $selection) {
                 Section {
-                    TagCloud(browse: browse)
-                    Button("Manage Tags…") { managingTags = true }.buttonStyle(.borderless)
+                    row("All samples", count: app.stats.samples - app.stats.missing) { Image(systemName: "waveform") }
+                        .tag(SidebarItem.all)
+                    row("Unsorted", count: app.unsortedCount) { Image(systemName: "questionmark.folder") }
+                        .tag(SidebarItem.unsorted)
                 } header: {
-                    Text("Tags").sondrLabel()
+                    Text("Library").sondrLabel()
                 }
+                Section {
+                    ForEach(app.clusters) { cluster in
+                        row(cluster.name, count: cluster.count) { ClusterMarker(color: clusterColor(cluster.id, app.palette)) }
+                            .tag(SidebarItem.cluster(cluster.id))
+                    }
+                } header: {
+                    Text("Clusters").sondrLabel()
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .frame(minHeight: 120)
+            if !app.tagCounts.isEmpty {
+                tagPanel.frame(minHeight: 120, idealHeight: 260)
             }
         }
-        .scrollContentBackground(.hidden)
         .background(Theme.panel)
         .safeAreaInset(edge: .bottom) { JobsBar(showingFailures: $showingFailures) }
         .sheet(isPresented: $managingTags) { TagManagerView() }
         .onChange(of: selection) { _, item in apply(item) }
+    }
+
+    /// Tag header with search and manage link; only the tag list scrolls.
+    private var tagPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Tags").sondrLabel()
+                Spacer()
+                Button("Manage tags") { managingTags = true }
+                    .buttonStyle(.link)
+                    .font(.caption)
+            }
+            TextField("Search tags", text: $tagSearch)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.small)
+            ScrollView {
+                TagCloud(browse: browse, search: tagSearch)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
     }
 
     /// A sidebar row: icon, name, count in mono.
@@ -73,10 +94,16 @@ struct SidebarView: View {
 struct TagCloud: View {
     @Environment(AppModel.self) private var app
     let browse: BrowseModel
+    var search = ""
+
+    private var visibleTags: [TagCount] {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        return query.isEmpty ? app.tagCounts : app.tagCounts.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
 
     var body: some View {
         FlowLayout(spacing: 4) {
-            ForEach(app.tagCounts, id: \.name) { tag in
+            ForEach(visibleTags, id: \.name) { tag in
                 let active = browse.filter.tags.contains(tag.name)
                 Button {
                     if active { browse.filter.tags.removeAll { $0 == tag.name } } else { browse.filter.tags.append(tag.name) }

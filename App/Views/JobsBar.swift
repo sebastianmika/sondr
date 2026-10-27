@@ -1,7 +1,7 @@
 import SondrCore
 import SwiftUI
 
-/// Library numbers, Index button, progress and cancel, at the bottom of the sidebar.
+/// Library numbers, progress and cancel, at the bottom of the sidebar.
 struct JobsBar: View {
     @Environment(AppModel.self) private var app
     @Binding var showingFailures: Bool
@@ -47,27 +47,8 @@ struct JobsBar: View {
                         Button("Cancel") { app.cancelIndexing() }.controlSize(.small)
                     }
                 }
-            } else {
-                HStack {
-                    Button {
-                        Task { await app.startIndexing() }
-                    } label: {
-                        Label(app.stats.pending > 0 ? "Index \(app.stats.pending)" : "Index", systemImage: "sparkles")
-                    }
-                    .disabled(app.stats.pending == 0 || app.isScanning || !app.modelsAvailable)
-                    .help(app.modelsAvailable ? "Compute embeddings for samples that have none" : "Core ML models not found")
-                    Button {
-                        Task { await app.rescanAll() }
-                    } label: {
-                        Label("Rescan", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(app.locations.isEmpty || app.isScanning || app.isIndexing || app.isRetagging)
-                    .help("Look for new, moved and removed files in all locations")
-                    Spacer()
-                    if app.stats.failed > 0 {
-                        Button("\(app.stats.failed) failed") { showingFailures = true }.buttonStyle(.link)
-                    }
-                }
+            } else if app.stats.failed > 0 {
+                Button("\(app.stats.failed) failed") { showingFailures = true }.buttonStyle(.link)
             }
             Text(summary).font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
         }
