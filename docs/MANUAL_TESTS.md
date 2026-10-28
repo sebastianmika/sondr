@@ -27,7 +27,7 @@ Use a temp library, not the real one, for the first pass.
 --> Not yet tested
 - **Map**: hover, click select/clear, area drag + banner, Esc, pan/pinch/⌘⌥ zoom, double-click reset, search fade, layout card (preview, Keep with Return, Discard, ⌥ flip, Show current, Restore previous), rebuild hint, indexing blocks preview, new samples appear without rebuild, speed at 50k and 250k.
 --> Not yet tested
-- **Cluster threshold**: with the fused model 4 of 8 labelled fixtures miss at 0.30 (see `ClusterModelTests`). Re-tune on ~500 real files with the owner's go-ahead.
+- **Cluster threshold**: threshold 0.22 was tuned on the full real library (31,403 samples, 90.6% sorted); 1 of 8 labelled fixtures still misses (see `ClusterModelTests`).
 --> See below
 
 ## Missing Features:

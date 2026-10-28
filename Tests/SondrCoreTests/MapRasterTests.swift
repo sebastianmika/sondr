@@ -12,7 +12,7 @@ private let palette = ClusterPalette(
 private let colours = palette.denseTable
 
 @Test func everySeededClusterHasItsOwnColourAndUnsortedIsGrey() {
-    let own = (0..<8).map { palette.rgb(forCluster: $0) }
+    let own = (0..<14).map { palette.rgb(forCluster: $0) }
     for i in own.indices {
         for j in own.indices where j > i {
             let a = own[i], b = own[j]

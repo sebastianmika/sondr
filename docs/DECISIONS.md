@@ -23,7 +23,7 @@ Swift end-to-end embeddings (51 files): min cosine 0.99870 (the 22.05 kHz file, 
 - Default group name is the representative's file stem (e.g. `Piano C3`); the pitch-less grouper key (`piano`) would read better, one-line switch.
 
 ## Clusters as data (2026-10-25)
-- The eight clusters are only a seed; names, colours and descriptions are edited in Settings → Clusters. Edits that change centres re-sort all samples from stored vectors via `ClusterReassignJob` (chunked, resumable). The 0.30 threshold stays global and provisional; with the fused model 4 of 8 labelled fixtures still miss (`ClusterModelTests` known issues).
+- The 14 clusters are only a seed; names, colours and descriptions are edited in Settings → Clusters. Edits that change centres re-sort all samples from stored vectors via `ClusterReassignJob` (chunked, resumable). The threshold is global: 0.22, tuned on the real library (90.6% of 31,403 samples reach it). The seed is now 14 clusters with CLAP prompts as keywords; 1 of 8 labelled fixtures still misses (`ClusterModelTests` known issue).
 
 ## Drag-out (2026-10-25)
 - `NSItemProvider(contentsOf:)` made SwiftUI hand out a cached copy (Finder name "Waveform audio", DAW path under `~/Library/Caches/com.apple.SwiftUI.Drag-…`). Now `NSItemProvider(object: url as NSURL)` with `suggestedName`. Unverified in Finder/DAW until the owner re-tests.

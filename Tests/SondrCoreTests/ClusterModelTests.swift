@@ -15,10 +15,11 @@ func clustersOfClearlyLabelledFixturesAreRight() async throws {
     let names = try ClusterCentres.seed().map(\.name)
     // With the fused model the old synthetic-fixture scores dropped (see DECISIONS.md, cluster threshold): these hold.
     let expected = [
-        "kick_short.wav": "kicks", "kick_long_tail.wav": "kicks", "bass_sub.wav": "bass", "bass.caf": "bass",
+        "kick_short.wav": "Kicks", "kick_long_tail.wav": "Kicks", "bass_sub.wav": "Bass", "bass.caf": "Bass",
+        "hat_closed_tiny.wav": "Hi-Hats & Cymbals", "hat_open.wav": "Hi-Hats & Cymbals", "fx_riser.wav": "FX & Risers",
     ]
-    // Wrong or below the threshold with the fused model: known issue until the centres/threshold are re-tuned.
-    let weak = ["hat_closed_tiny.wav": "hats/perc", "hat_open.wav": "hats/perc", "snare.aiff": "snares", "fx_riser.wav": "fx/risers"]
+    // Synthetic snare is read as a kick by the fused model: known issue.
+    let weak = ["snare.aiff": "Snares & Claps"]
     func check(_ file: String, _ cluster: String) async throws {
         let clip = try AudioLoader.load(url: Fixtures.url("audio/\(file)"))
         let vector = try await service.embed(audio: [clip])[0]

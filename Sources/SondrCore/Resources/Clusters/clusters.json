@@ -1,10 +1,16 @@
 [
-  {"id": 0, "name": "kicks",     "color": "#FF4D6D",  "keywords": ["drums", "kick", "deep", "boom", "thump"]},
-  {"id": 1, "name": "snares",    "color": "#FFB02E",   "keywords": ["drums", "snare", "clap", "rim", "snr"]},
-  {"id": 2, "name": "hats/perc", "color": "#AEE03A",   "keywords": ["drums", "hat", "shaker", "perc", "tom", "conga", "tamb", "bell", "cowbell"]},
-  {"id": 3, "name": "bass",      "color": "#3DDC97",   "keywords": ["bass", "sub", "reese"]},
-  {"id": 4, "name": "pads",      "color": "#35B6FF", "keywords": ["pad", "ambient", "drone", "texture", "wash", "string"]},
-  {"id": 5, "name": "leads",     "color": "#8E7CFF",  "keywords": ["lead", "pluck", "arp", "stab", "acid"]},
-  {"id": 6, "name": "vox chops", "color": "#E066FF",   "keywords": ["vox", "vocal", "voc", "chop", "choir", "chant", "ahh", "ooh", "whisper"]},
-  {"id": 7, "name": "fx/risers", "color": "#7FD1D1",   "keywords": ["fx", "riser", "impact", "whoosh", "sweep", "crash", "downlift", "noise"]}
+  {"id": 0, "name": "Kicks", "color": "#FF5E19", "keywords": ["a deep, punchy electronic kick drum hit with a low thump"]},
+  {"id": 1, "name": "Snares & Claps", "color": "#FFB280", "keywords": ["a sharp snare drum, rim shot or hand clap hit with a bright crack"]},
+  {"id": 2, "name": "Hi-Hats & Cymbals", "color": "#94992E", "keywords": ["a short metallic hi-hat, ride or shimmering cymbal crash"]},
+  {"id": 3, "name": "Percussion", "color": "#DDFF19", "keywords": ["a percussive hit like a conga, tambourine, cowbell, shaker, tom or woodblock"]},
+  {"id": 4, "name": "Drum Loops", "color": "#14CC27", "keywords": ["a rhythmic drum loop with kick, snare and hi-hats playing a groove"]},
+  {"id": 5, "name": "Bass", "color": "#80FF8C", "keywords": ["a low, heavy synthesizer bass note or bassline"]},
+  {"id": 6, "name": "Synth Notes", "color": "#19FFF4", "keywords": ["a single sustained note played on an analog synthesizer"]},
+  {"id": 7, "name": "Chords & Stabs", "color": "#0F7D99", "keywords": ["a synthesizer chord or short stab playing several notes at once"]},
+  {"id": 8, "name": "Pads & Drones", "color": "#8099FF", "keywords": ["a soft, sustained, evolving synthesizer pad or atmospheric drone"]},
+  {"id": 9, "name": "Keys & Organs", "color": "#2519FF", "keywords": ["a note played on a piano, electric piano, organ, wurlitzer or mallet instrument"]},
+  {"id": 10, "name": "Brass, Strings & Guitar", "color": "#7E2E99", "keywords": ["a note played on a brass, string, flute, accordion or guitar instrument"]},
+  {"id": 11, "name": "Vocals", "color": "#F64DFF", "keywords": ["a human voice singing, speaking, or a chopped vocal phrase"]},
+  {"id": 12, "name": "FX & Risers", "color": "#FF198C", "keywords": ["a sweeping riser, downlifter, whoosh, scratch or impact sound effect"]},
+  {"id": 13, "name": "Textures & Foley", "color": "#990F16", "keywords": ["ambient noise, field recording, or real-world foley sounds"]}
 ]

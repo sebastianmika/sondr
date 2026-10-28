@@ -909,12 +909,12 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     await app.saveClusters(kept + [added])
 
     #expect(app.clusters.map(\.name) == kept.map(\.name) + ["mine"])
-    #expect(app.clusters.last?.id == 8)
+    #expect(app.clusters.last?.id == 14)
     #expect(app.clusters.last?.color == "#123456")
     #expect(app.clusters.map(\.count).reduce(0, +) + app.unsortedCount == 24)
     #expect(app.reclusterProgress == nil)
     #expect(app.message == "Sorted 24 samples into clusters.")
-    #expect(app.palette.rgb(forCluster: 8) == .init(red: 0x12, green: 0x34, blue: 0x56))
+    #expect(app.palette.rgb(forCluster: 14) == .init(red: 0x12, green: 0x34, blue: 0x56))
 }
 
 @MainActor @Test func savingNoClustersIsRefusedAndChangesNothing() async throws {
@@ -928,5 +928,5 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     await app.saveClusters([])
 
     #expect(app.message == ClusterError.invalidEdit("At least one cluster is needed.").errorDescription)
-    #expect(app.clusters.count == 8)
+    #expect(app.clusters.count == 14)
 }

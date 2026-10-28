@@ -328,7 +328,7 @@ private final class AsyncGate: @unchecked Sendable {
 
     #expect(try await library.scalar("SELECT count(*) FROM samples WHERE embed_state = 'done' AND (cluster_id IS NULL OR cluster_score IS NULL)") == 0)
     #expect(try await library.scalar("SELECT count(*) FROM samples WHERE cluster_id NOT IN (SELECT id FROM clusters)") == 0)
-    #expect(try await library.scalar("SELECT count(*) FROM cluster_centres") == 8)
+    #expect(try await library.scalar("SELECT count(*) FROM cluster_centres") == 14)
     #expect(try await library.scalar("SELECT count(*) FROM samples WHERE embed_state != 'done' AND cluster_id IS NOT NULL") == 0)
 }
 
