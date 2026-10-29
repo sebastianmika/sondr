@@ -337,3 +337,28 @@ private func smallParameters(sample: Int, seed: UInt64 = 42) -> MapParameters {
     await model.keep()
     #expect(model.revision > withPreview)
 }
+
+@Test @MainActor func fillFrameWarpsTheShownDotsAndIsRememberedWithoutTouchingTheStoredMap() async throws {
+    let (database, ids) = try makeLibrary(samples: 5)
+    try await database.writer.write { db in
+        let state = TSNEModelState(embedding: [SIMD2(0, 0)], referenceWork: [0, 0], workDimensions: 2, inputDimensions: 2, pca: nil)
+        let points = ids.enumerated().map { MapPoint(sampleID: $1, x: Float($0 * $0) * 100, y: Float($0), fitted: true) }
+        _ = try MapStore.save(db, state: state, parameters: MapParameters(), modelVersion: "m1", points: points)
+    }
+    let remembered = LockedBox(MapDisplay())
+    let store = MapSettingsStore(
+        load: { MapParameters() }, save: { _ in }, loadDisplay: { remembered.value }, saveDisplay: { new in remembered.withValue { $0 = new } })
+    let model = MapModel(database: database, modelVersion: { "m1" }, settings: store)
+    await model.load()
+    let raw = try #require(model.dots)
+    #expect(raw.x == [0, 100, 400, 900, 1600])
+
+    model.display.rankWarp = true
+    #expect(model.dots?.x == [0.1, 0.3, 0.5, 0.7, 0.9])
+    #expect(remembered.value.rankWarp)
+
+    model.display.rankWarp = false
+    #expect(model.dots == raw)
+    let reopened = MapModel(database: database, modelVersion: { "m1" }, settings: store)
+    #expect(reopened.display == remembered.value)
+}

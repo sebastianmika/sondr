@@ -211,3 +211,17 @@ func rasterOf250kDotsIsFast() {
     let hit = clock.measure { _ = MapRaster.nearest(in: data, to: SIMD2(1200, 800), viewport: viewport, size: SIMD2(2400, 1600), maxDistance: 10) }
     print("raster 250k at 2400x1600: \(draw), with a 20k highlight: \(drawHighlight), hit test: \(hit); \(buffer.count) bytes")
 }
+
+@Test func rankWarpSpreadsDotsEvenlyAndKeepsTheirOrder() {
+    let dots = MapDots(
+        ids: [1, 2, 3, 4], x: [0, 1, 2, 1000], y: [5, 5, 3, -9], cluster: [0, 0, 1, 1], fitted: [true, true, true, true])
+    let warped = dots.rankWarped()
+    #expect(warped.x == [0.125, 0.375, 0.625, 0.875])
+    #expect(warped.y == [0.625, 0.625, 0.375, 0.125], "equal values keep equal ranks")
+    #expect(warped.ids == dots.ids && warped.cluster == dots.cluster && warped.fitted == dots.fitted)
+}
+
+@Test func rankWarpOfNoDotsIsEmpty() {
+    let empty = MapDots(ids: [], x: [], y: [], cluster: [], fitted: [])
+    #expect(empty.rankWarped() == empty)
+}

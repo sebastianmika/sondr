@@ -3,14 +3,29 @@ import GRDB
 import Observation
 import simd
 
+/// How the map is drawn. Unlike ``MapParameters`` it never changes the layout stored in the database.
+public struct MapDisplay: Codable, Equatable, Sendable {
+    /// Spread the dots evenly over the frame (see ``MapDots/rankWarped()``).
+    public var rankWarp = false
+
+    public init() {}
+}
+
 /// Where the map settings are kept between runs.
 public struct MapSettingsStore: Sendable {
     public var load: @Sendable () -> MapParameters
     public var save: @Sendable (MapParameters) -> Void
+    public var loadDisplay: @Sendable () -> MapDisplay
+    public var saveDisplay: @Sendable (MapDisplay) -> Void
 
-    public init(load: @escaping @Sendable () -> MapParameters, save: @escaping @Sendable (MapParameters) -> Void) {
+    public init(
+        load: @escaping @Sendable () -> MapParameters, save: @escaping @Sendable (MapParameters) -> Void,
+        loadDisplay: @escaping @Sendable () -> MapDisplay = { MapDisplay() }, saveDisplay: @escaping @Sendable (MapDisplay) -> Void = { _ in }
+    ) {
         self.load = load
         self.save = save
+        self.loadDisplay = loadDisplay
+        self.saveDisplay = saveDisplay
     }
 
     /// Stores the settings as JSON under one key.
@@ -21,7 +36,9 @@ public struct MapSettingsStore: Sendable {
                 box.defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(MapParameters.self, from: $0) }?.clamped()
                     ?? MapParameters()
             },
-            save: { box.defaults.set(try? JSONEncoder().encode($0), forKey: key) })
+            save: { box.defaults.set(try? JSONEncoder().encode($0), forKey: key) },
+            loadDisplay: { box.defaults.data(forKey: key + "Display").flatMap { try? JSONDecoder().decode(MapDisplay.self, from: $0) } ?? MapDisplay() },
+            saveDisplay: { box.defaults.set(try? JSONEncoder().encode($0), forKey: key + "Display") })
     }
 
     /// `UserDefaults` is safe to use from any thread; it is just not marked as such.
@@ -49,9 +66,22 @@ public final class MapModel {
     public private(set) var hasPrevious = false
     /// The current map.
     public private(set) var dots: MapDots? { didSet { revision += 1 } }
+    private var layoutDots: MapDots? { didSet { dots = shown(layoutDots) } }
     public private(set) var preview: MapPreview?
     /// The previewed layout (the fitted sample only), also while it is still being computed.
     public private(set) var previewDots: MapDots? { didSet { revision += 1 } }
+    private var layoutPreviewDots: MapDots? { didSet { previewDots = shown(layoutPreviewDots) } }
+    /// How the dots are drawn. Persisted; `dots` and `previewDots` follow it.
+    public var display = MapDisplay() {
+        didSet {
+            guard display != oldValue else { return }
+            settings.saveDisplay(display)
+            dots = shown(layoutDots)
+            previewDots = shown(layoutPreviewDots)
+        }
+    }
+
+    private func shown(_ dots: MapDots?) -> MapDots? { display.rankWarp ? dots?.rankWarped() : dots }
     /// Changes whenever ``dots`` or ``previewDots`` change, so a view knows when to draw again.
     public private(set) var revision = 0
     public private(set) var canBuild = false
@@ -105,6 +135,7 @@ public final class MapModel {
         self.settings = settings
         self.debounce = debounce
         self.unavailableReason = unavailableReason
+        self.display = settings.loadDisplay()
     }
 
     /// Why no preview can start right now, if something else is using the GPU.
@@ -139,9 +170,9 @@ public final class MapModel {
             if force || map?.id != current?.id || map?.pointCount != current?.pointCount {
                 if let map {
                     let id = map.id
-                    dots = try await database.writer.read { try MapDots.load($0, mapID: id) }
+                    layoutDots = try await database.writer.read { try MapDots.load($0, mapID: id) }
                 } else {
-                    dots = nil
+                    layoutDots = nil
                 }
             }
             current = map
@@ -171,7 +202,7 @@ public final class MapModel {
         previewTask?.cancel()
         previewTask = nil
         preview = nil
-        previewDots = nil
+        layoutPreviewDots = nil
         if case .working = phase { return }
         phase = .idle
         setDraft(saved)
@@ -213,7 +244,7 @@ public final class MapModel {
                 let clusters = try await self.database.writer.read { try MapDots.clusterIDs($0, for: result.sampleIDs) }
                 guard self.generation == mine else { return }
                 self.preview = result
-                self.previewDots = Self.dots(ids: result.sampleIDs, positions: result.positions, clusters: clusters)
+                self.layoutPreviewDots = Self.dots(ids: result.sampleIDs, positions: result.positions, clusters: clusters)
                 self.phase = .previewing
             } catch is CancellationError {
                 return
@@ -232,14 +263,14 @@ public final class MapModel {
         case .fitting:
             phase = .computing(done: progress.done, total: progress.total)
             guard let ids = progress.sampleIDs, let positions = progress.positions else { return }
-            if previewDots?.ids != ids {
+            if layoutPreviewDots?.ids != ids {
                 liveClusters = nil
                 Task { [database] in
                     let clusters = try? await database.writer.read { try MapDots.clusterIDs($0, for: ids) }
                     await MainActor.run { if self.generation == mine { self.liveClusters = clusters } }
                 }
             }
-            previewDots = Self.dots(ids: ids, positions: positions, clusters: liveClusters ?? [Int](repeating: -1, count: ids.count))
+            layoutPreviewDots = Self.dots(ids: ids, positions: positions, clusters: liveClusters ?? [Int](repeating: -1, count: ids.count))
         default:
             break
         }
@@ -266,7 +297,7 @@ public final class MapModel {
             }
             settings.save(preview.parameters)
             self.preview = nil
-            previewDots = nil
+            layoutPreviewDots = nil
             isTuning = false
             phase = .idle
             setDraft(preview.parameters, saved: true)

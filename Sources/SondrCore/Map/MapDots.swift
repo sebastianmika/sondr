@@ -21,6 +21,29 @@ public struct MapDots: Equatable, Sendable {
         self.fitted = fitted
     }
 
+    /// The same dots with each axis replaced by the dot's rank share (0 to 1), which spreads them evenly
+    /// over the frame. Distances stop meaning anything; neighbours stay neighbours. Equal values stay equal.
+    public func rankWarped() -> MapDots {
+        var warped = self
+        warped.x = Self.rankShares(x)
+        warped.y = Self.rankShares(y)
+        return warped
+    }
+
+    static func rankShares(_ values: [Float]) -> [Float] {
+        let order = values.indices.sorted { values[$0] < values[$1] }
+        var shares = [Float](repeating: 0, count: values.count)
+        var start = 0
+        while start < order.count {
+            var end = start
+            while end + 1 < order.count, values[order[end + 1]] == values[order[start]] { end += 1 }
+            let share = (Float(start) + 0.5) / Float(order.count)
+            for i in start...end { shares[order[i]] = share }
+            start = end + 1
+        }
+        return shares
+    }
+
     /// All points of a stored map, ordered by sample id.
     public static func load(_ db: Database, mapID: Int64) throws -> MapDots {
         var dots = MapDots(ids: [], x: [], y: [], cluster: [], fitted: [])

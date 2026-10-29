@@ -60,7 +60,7 @@ struct MapCanvasView: View {
         .clipped()
         .background(
             GeometryReader { proxy in Color.clear.onAppear { outer = proxy.size }.onChange(of: proxy.size) { _, new in outer = new } })
-        .task(id: FitKey(base: map?.current?.id, hasPreview: map?.preview != nil, hasDots: map?.dots != nil, size: size)) {
+        .task(id: FitKey(base: map?.current?.id, hasPreview: map?.preview != nil, hasDots: map?.dots != nil, rankWarp: map?.display.rankWarp ?? false, size: size)) {
             await computeFit()
         }
         .task(id: renderKey) { await render() }
@@ -74,6 +74,7 @@ struct MapCanvasView: View {
                 map?.layoutPanelRequested = false
             }
         }
+        .onChange(of: map?.display.rankWarp) { viewport = nil }
         .onChange(of: showLayout) { _, open in
             guard let map else { return }
             if open {
@@ -104,6 +105,7 @@ struct MapCanvasView: View {
         let base: Int64?
         let hasPreview: Bool
         let hasDots: Bool
+        let rankWarp: Bool
         let size: CGSize
     }
 
@@ -284,6 +286,9 @@ struct MapCanvasView: View {
             HStack(alignment: .top) {
                 statusChip(map)
                 Spacer()
+                Toggle("Fill frame", isOn: Binding(get: { map.display.rankWarp }, set: { map.display.rankWarp = $0 }))
+                    .toggleStyle(.button).controlSize(.small)
+                    .help("Spread the dots evenly over the frame. Distances between groups stop meaning anything.")
                 if map.canBuild {
                     Button { showLayout.toggle() } label: { Label("Layout", systemImage: "slider.horizontal.3") }
                         .buttonStyle(.bordered).controlSize(.small)
