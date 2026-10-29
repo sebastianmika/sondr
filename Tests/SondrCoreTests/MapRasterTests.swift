@@ -225,3 +225,19 @@ func rasterOf250kDotsIsFast() {
     let empty = MapDots(ids: [], x: [], y: [], cluster: [], fitted: [])
     #expect(empty.rankWarped() == empty)
 }
+
+@Test func recolouringByADimMapsValuesToRampSlotsAndUnknownToGrey() {
+    var dots = MapDots(ids: [1, 2, 3, 4], x: [0, 1, 2, 3], y: [0, 0, 0, 0], cluster: [5, 5, 5, 5], fitted: [true, true, true, true])
+    dots.dimensions[.energy] = [0, 0.5, 1, .nan]
+    let drawn = dots.recoloured(by: .energy)
+    #expect(drawn.cluster == [0, 128, 255, -1])
+    #expect(dots.recoloured(by: .tonality).cluster == [-1, -1, -1, -1], "a dim that was not loaded draws grey")
+    #expect(ColourRamp.table.count == 257 && ColourRamp.table[0] == ClusterPalette.unsorted)
+    #expect(ColourRamp.table[1] != ColourRamp.table[256])
+}
+
+@Test func rankWarpKeepsTheDims() {
+    var dots = MapDots(ids: [1, 2], x: [0, 5], y: [0, 5], cluster: [0, 0], fitted: [true, true])
+    dots.dimensions[.energy] = [0.2, 0.9]
+    #expect(dots.rankWarped().dimensions == dots.dimensions)
+}

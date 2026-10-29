@@ -362,3 +362,33 @@ private func smallParameters(sample: Int, seed: UInt64 = 42) -> MapParameters {
     let reopened = MapModel(database: database, modelVersion: { "m1" }, settings: store)
     #expect(reopened.display == remembered.value)
 }
+
+@Test func loadedDotsCarryDimsScaledByTheCorpusStatistics() throws {
+    let (database, ids) = try makeLibrary(samples: 3)
+    let dots = try database.writer.write { db -> MapDots in
+        for (id, value) in zip(ids, [0.0, 5.0, 20.0]) {
+            try db.execute(sql: "UPDATE samples SET dim_energy = ? WHERE id = ?", arguments: [value, id])
+        }
+        try db.execute(sql: "INSERT INTO dim_stats (dim, p5, p95) VALUES ('energy', 0, 10)")
+        let state = TSNEModelState(embedding: [SIMD2(0, 0)], referenceWork: [0, 0], workDimensions: 2, inputDimensions: 2, pca: nil)
+        let points = ids.map { MapPoint(sampleID: $0, x: 0, y: 0, fitted: true) }
+        let mapID = try MapStore.save(db, state: state, parameters: MapParameters(), modelVersion: "m", points: points)
+        let loaded = try MapDots.load(db, mapID: mapID)
+        let notes = try MapDots.annotations(db, for: [ids[2], ids[0], 999])
+        #expect(notes.dimensions[.energy]?[0] == 1 && notes.dimensions[.energy]?[1] == 0)
+        #expect(notes.dimensions[.energy]?[2].isNaN == true && notes.cluster == [-1, -1, -1])
+        return loaded
+    }
+    #expect(dots.dimensions[.energy] == [0, 0.5, 1], "clipped to the p5...p95 range")
+    #expect(dots.dimensions[.brightness]?.allSatisfy { $0.isNaN } == true, "no statistics, no colour")
+}
+
+@Test func displaySettingsFromOlderStorageKeepTheirValuesAndGetDefaults() throws {
+    let old = try JSONDecoder().decode(MapDisplay.self, from: Data(#"{"rankWarp": true}"#.utf8))
+    #expect(old.rankWarp && old.colourBy == .cluster)
+    let unknown = try JSONDecoder().decode(MapDisplay.self, from: Data(#"{"colourBy": "loudness"}"#.utf8))
+    #expect(unknown.colourBy == .cluster)
+    var display = MapDisplay()
+    display.colourBy = .tonality
+    #expect(try JSONDecoder().decode(MapDisplay.self, from: JSONEncoder().encode(display)) == display)
+}

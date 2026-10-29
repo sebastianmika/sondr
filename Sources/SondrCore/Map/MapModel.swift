@@ -3,12 +3,30 @@ import GRDB
 import Observation
 import simd
 
+/// What the dots are coloured by: the sample's cluster, or one of the six dims.
+public enum MapColourBy: String, Codable, CaseIterable, Sendable {
+    case cluster, brightness, percussiveness, energy, tonality, noisiness, duration
+
+    public var dim: Dim? { Dim(rawValue: rawValue) }
+    public var title: String { rawValue.capitalized }
+}
+
 /// How the map is drawn. Unlike ``MapParameters`` it never changes the layout stored in the database.
 public struct MapDisplay: Codable, Equatable, Sendable {
     /// Spread the dots evenly over the frame (see ``MapDots/rankWarped()``).
     public var rankWarp = false
+    public var colourBy = MapColourBy.cluster
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey { case rankWarp, colourBy }
+
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        rankWarp = try c.decodeIfPresent(Bool.self, forKey: .rankWarp) ?? rankWarp
+        colourBy = (try? c.decodeIfPresent(MapColourBy.self, forKey: .colourBy)).flatMap { $0 } ?? colourBy
+    }
 }
 
 /// Where the map settings are kept between runs.
@@ -241,10 +259,10 @@ public final class MapModel {
                 }
                 try Task.checkCancellation()
                 guard self.generation == mine else { return }
-                let clusters = try await self.database.writer.read { try MapDots.clusterIDs($0, for: result.sampleIDs) }
+                let notes = try await self.database.writer.read { try MapDots.annotations($0, for: result.sampleIDs) }
                 guard self.generation == mine else { return }
                 self.preview = result
-                self.layoutPreviewDots = Self.dots(ids: result.sampleIDs, positions: result.positions, clusters: clusters)
+                self.layoutPreviewDots = Self.dots(ids: result.sampleIDs, positions: result.positions, notes: notes)
                 self.phase = .previewing
             } catch is CancellationError {
                 return
@@ -255,7 +273,7 @@ public final class MapModel {
         }
     }
 
-    private var liveClusters: [Int]?
+    private var liveNotes: (cluster: [Int], dimensions: [Dim: [Float]])?
 
     private func apply(_ progress: MapProgress, generation mine: Int) {
         guard generation == mine, case .computing = phase else { return }
@@ -264,22 +282,25 @@ public final class MapModel {
             phase = .computing(done: progress.done, total: progress.total)
             guard let ids = progress.sampleIDs, let positions = progress.positions else { return }
             if layoutPreviewDots?.ids != ids {
-                liveClusters = nil
+                liveNotes = nil
                 Task { [database] in
-                    let clusters = try? await database.writer.read { try MapDots.clusterIDs($0, for: ids) }
-                    await MainActor.run { if self.generation == mine { self.liveClusters = clusters } }
+                    let notes = try? await database.writer.read { try MapDots.annotations($0, for: ids) }
+                    await MainActor.run { if self.generation == mine { self.liveNotes = notes } }
                 }
             }
-            layoutPreviewDots = Self.dots(ids: ids, positions: positions, clusters: liveClusters ?? [Int](repeating: -1, count: ids.count))
+            layoutPreviewDots = Self.dots(
+                ids: ids, positions: positions, notes: liveNotes ?? ([Int](repeating: -1, count: ids.count), [:]))
         default:
             break
         }
     }
 
-    private static func dots(ids: [Int64], positions: [SIMD2<Float>], clusters: [Int]) -> MapDots {
+    private static func dots(
+        ids: [Int64], positions: [SIMD2<Float>], notes: (cluster: [Int], dimensions: [Dim: [Float]])
+    ) -> MapDots {
         MapDots(
-            ids: ids, x: positions.map(\.x), y: positions.map(\.y), cluster: clusters,
-            fitted: [Bool](repeating: true, count: ids.count))
+            ids: ids, x: positions.map(\.x), y: positions.map(\.y), cluster: notes.cluster,
+            fitted: [Bool](repeating: true, count: ids.count), dimensions: notes.dimensions)
     }
 
     // MARK: Keeping and restoring

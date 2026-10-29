@@ -120,6 +120,7 @@ struct MapCanvasView: View {
         let showsPreview: Bool
         let highlight: Int
         let colours: [String]
+        let colourBy: MapColourBy
         let size: CGSize
         let centreX: Float
         let centreY: Float
@@ -130,7 +131,7 @@ struct MapCanvasView: View {
 
     private var renderKey: RenderKey {
         RenderKey(
-            revision: map?.revision ?? 0, showsPreview: showsPreview, highlight: browse.highlightRevision, colours: app.clusters.map(\.color), size: size,
+            revision: map?.revision ?? 0, showsPreview: showsPreview, highlight: browse.highlightRevision, colours: app.clusters.map(\.color), colourBy: map?.display.colourBy ?? .cluster, size: size,
             centreX: effective.centre.x, centreY: effective.centre.y, scale: effective.scale, displayScale: displayScale,
             colorScheme: colorScheme)
     }
@@ -155,9 +156,11 @@ struct MapCanvasView: View {
         let highlight = showsPreview ? nil : browse.highlight
         // Colours are baked into the picture, so they are made legible for the current ground here and the picture is redrawn when the scheme changes.
         let ground = ThemeTokens.clusterGround.value(for: Theme.scheme(colorScheme))
-        let colours = app.palette.denseTable.map { $0.legible(on: ground) }
+        let colourBy = map?.display.colourBy ?? .cluster
+        let colours = (colourBy.dim == nil ? app.palette.denseTable : ColourRamp.table).map { $0.legible(on: ground) }
         let bytes = await Task.detached(priority: .userInitiated) {
-            MapRaster.render(dots, colours: colours, viewport: scaled, width: width, height: height, highlight: highlight, radius: nil)
+            let drawn = colourBy.dim.map { dots.recoloured(by: $0) } ?? dots
+            return MapRaster.render(drawn, colours: colours, viewport: scaled, width: width, height: height, highlight: highlight, radius: nil)
         }.value
         guard !Task.isCancelled, let provider = CGDataProvider(data: Data(bytes) as CFData) else { return }
         image = CGImage(
@@ -285,6 +288,11 @@ struct MapCanvasView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top) {
                 statusChip(map)
+                Picker("Colour", selection: Binding(get: { map.display.colourBy }, set: { map.display.colourBy = $0 })) {
+                    ForEach(MapColourBy.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.menu).controlSize(.small).fixedSize()
+                .help("Colour the dots by cluster or by one of the six dims")
                 Spacer()
                 Toggle("Fill frame", isOn: Binding(get: { map.display.rankWarp }, set: { map.display.rankWarp = $0 }))
                     .toggleStyle(.button).controlSize(.small)
@@ -308,6 +316,7 @@ struct MapCanvasView: View {
                 if let dots {
                     Text("\(dots.count.formatted()) samples").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
                 }
+                if let dim = map.display.colourBy.dim { legend(for: dim) }
                 if let hint = map.rebuildHint, !showLayout {
                     Label("Library has grown. Rebuild?", systemImage: "arrow.triangle.2.circlepath").font(.caption)
                         .help(hint).onTapGesture { showLayout = true }
@@ -317,6 +326,19 @@ struct MapCanvasView: View {
             }
         }
         .padding(8)
+    }
+
+    private func legend(for dim: Dim) -> some View {
+        let colours = (0..<8).map { i -> Color in
+            let c = ColourRamp.colour(Double(i) / 7)
+            return Color(red: Double(c.red) / 255, green: Double(c.green) / 255, blue: Double(c.blue) / 255)
+        }
+        return HStack(spacing: 4) {
+            Text("\(dim.rawValue) low")
+            LinearGradient(colors: colours, startPoint: .leading, endPoint: .trailing).frame(width: 70, height: 6).clipShape(Capsule())
+            Text("high")
+        }
+        .font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
     }
 
     @ViewBuilder private func statusChip(_ map: MapModel) -> some View {
