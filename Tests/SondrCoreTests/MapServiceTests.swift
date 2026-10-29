@@ -241,3 +241,56 @@ func aMapFromAnotherEmbeddingModelIsNotUsedForAlignment() async throws {
     let preview = try await service.preview(parameters: parameters(sample: 150), modelVersion: "new-model")
     #expect(!preview.isAligned)
 }
+
+/// Samples 0..<members of `ids` become one multisample group whose representative is `ids[representative]`.
+private func groupFirst(_ members: Int, of ids: [Int64], representative: Int, in database: LibraryDatabase) throws {
+    try database.writer.write { db in
+        try db.execute(sql: "INSERT INTO locations (id, path, added_at) VALUES (1, '/lib', 0)")
+        try db.execute(
+            sql: "INSERT INTO sample_groups (id, location_id, folder, key, name, representative_id) VALUES (1, 1, '', 'k_{p}', 'K', ?)",
+            arguments: [ids[representative]])
+        for id in ids.prefix(members) { try db.execute(sql: "UPDATE samples SET group_id = 1 WHERE id = ?", arguments: [id]) }
+    }
+}
+
+@Test(.enabled(if: metalAvailable, "Requires a Metal GPU"))
+func collapsingAMultisampleGroupFitsOnePointForIt() async throws {
+    let (database, ids) = try makeLibrary(samples: 120)
+    try groupFirst(20, of: ids, representative: 5, in: database)
+    var collapsed = parameters(sample: 1_000)
+    collapsed.collapseMultisamples = true
+    let preview = try await MapService(database: database).preview(parameters: collapsed, modelVersion: "m1")
+
+    #expect(preview.sampleIDs.count == 101)
+    #expect(preview.sampleIDs.contains(ids[5]))
+    #expect(Set(preview.sampleIDs).isDisjoint(with: ids.prefix(20).filter { $0 != ids[5] }))
+    #expect(preview.groups == [ids[5]: Array(ids.prefix(20)).sorted()])
+}
+
+@Test(.enabled(if: metalAvailable, "Requires a Metal GPU"))
+func keepingACollapsedPreviewPutsEveryGroupMemberAtTheGroupPoint() async throws {
+    let (database, ids) = try makeLibrary(samples: 120)
+    try groupFirst(20, of: ids, representative: 5, in: database)
+    var collapsed = parameters(sample: 1_000)
+    collapsed.collapseMultisamples = true
+    let service = MapService(database: database)
+    let stored = try await service.keep(try await service.preview(parameters: collapsed, modelVersion: "m1"))
+    let points = try await database.writer.read { try MapStore.points($0, mapID: stored.id) }
+
+    #expect(points.count == 120)
+    let byID = Dictionary(uniqueKeysWithValues: points.map { ($0.sampleID, $0) })
+    let anchor = try #require(byID[ids[5]])
+    #expect(anchor.fitted)
+    for id in ids.prefix(20) where id != ids[5] {
+        let member = try #require(byID[id])
+        #expect(member.x == anchor.x && member.y == anchor.y && !member.fitted)
+    }
+}
+
+@Test(.enabled(if: metalAvailable, "Requires a Metal GPU"))
+func withoutCollapsingEveryGroupMemberIsFittedOnItsOwn() async throws {
+    let (database, ids) = try makeLibrary(samples: 120)
+    try groupFirst(20, of: ids, representative: 5, in: database)
+    let preview = try await MapService(database: database).preview(parameters: parameters(sample: 1_000), modelVersion: "m1")
+    #expect(preview.sampleIDs.count == 120 && preview.groups.isEmpty)
+}

@@ -347,6 +347,9 @@ private struct LayoutCard: View {
             slider("Neighbourhood size", "\(Int(map.draft.perplexity))", value: Binding(get: { map.draft.perplexity }, set: { map.draft.perplexity = $0 }), range: MapParameters.perplexityRange, step: 1)
             slider("Cluster tightness", "\(Int(map.draft.earlyExaggeration))", value: Binding(get: { map.draft.earlyExaggeration }, set: { map.draft.earlyExaggeration = $0 }), range: MapParameters.earlyExaggerationRange, step: 1)
             slider("Refinement steps", "\(map.draft.iterations)", value: intBinding(\.iterations), range: 100...1_000, step: 50)
+            Toggle("Collapse multisample groups", isOn: Binding(get: { map.draft.collapseMultisamples }, set: { map.draft.collapseMultisamples = $0 }))
+                .font(.callout).controlSize(.small)
+                .help("Lay out each multisample group as one point. All its members sit at that point.")
             HStack {
                 Button("New random sample") { map.draft.seed = UInt64.random(in: 1...UInt64.max) }
                 Button("Reset") { map.draft = MapParameters() }

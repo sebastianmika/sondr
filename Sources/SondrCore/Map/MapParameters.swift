@@ -40,6 +40,9 @@ public struct MapParameters: Codable, Sendable, Equatable {
     public var iterations = 300
     /// Reduce the vectors to this many dimensions first; nil to skip.
     public var pcaDimensions: Int? = 50
+    /// Lay out each multisample group as one point (the mean of its members) and put every member at that
+    /// point, so a group of 60 notes does not smear into a strand across the map.
+    public var collapseMultisamples = false
 
     // Advanced
     /// Neighbours kept per point; nil means three times the perplexity.
@@ -58,7 +61,7 @@ public struct MapParameters: Codable, Sendable, Equatable {
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case sampleSize, perplexity, earlyExaggeration, iterations, pcaDimensions, neighborCount
+        case sampleSize, perplexity, earlyExaggeration, iterations, pcaDimensions, collapseMultisamples, neighborCount
         case earlyExaggerationIterations, learningRate, initialMomentum, finalMomentum
         case initialization, backend, seed
     }
@@ -72,6 +75,7 @@ public struct MapParameters: Codable, Sendable, Equatable {
         iterations = try c.decodeIfPresent(Int.self, forKey: .iterations) ?? iterations
         // An explicit null means "off", a missing key means "default".
         if c.contains(.pcaDimensions) { pcaDimensions = try c.decodeIfPresent(Int.self, forKey: .pcaDimensions) }
+        collapseMultisamples = try c.decodeIfPresent(Bool.self, forKey: .collapseMultisamples) ?? collapseMultisamples
         neighborCount = try c.decodeIfPresent(Int.self, forKey: .neighborCount)
         earlyExaggerationIterations =
             try c.decodeIfPresent(Int.self, forKey: .earlyExaggerationIterations) ?? earlyExaggerationIterations
@@ -90,6 +94,7 @@ public struct MapParameters: Codable, Sendable, Equatable {
         try c.encode(earlyExaggeration, forKey: .earlyExaggeration)
         try c.encode(iterations, forKey: .iterations)
         if let pcaDimensions { try c.encode(pcaDimensions, forKey: .pcaDimensions) } else { try c.encodeNil(forKey: .pcaDimensions) }
+        try c.encode(collapseMultisamples, forKey: .collapseMultisamples)
         try c.encodeIfPresent(neighborCount, forKey: .neighborCount)
         try c.encode(earlyExaggerationIterations, forKey: .earlyExaggerationIterations)
         try c.encodeIfPresent(learningRate, forKey: .learningRate)

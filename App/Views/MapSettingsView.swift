@@ -97,6 +97,9 @@ private struct MapSettingsForm: View {
             ) {
                 Slider(value: intBinding(parameters.iterations), in: Double(MapParameters.iterationsRange.lowerBound)...Double(MapParameters.iterationsRange.upperBound), step: 50)
             }
+            Toggle("Collapse multisample groups", isOn: parameters.collapseMultisamples)
+            Text("Lays out each multisample group as one point, the average of its members, and puts every member at that point. Without it, the notes of one instrument form long thin strands that take up much of the map.")
+                .font(.caption).foregroundStyle(.secondary)
             Toggle("Reduce the vectors first", isOn: Binding(
                 get: { parameters.wrappedValue.pcaDimensions != nil },
                 set: { var p = parameters.wrappedValue; p.pcaDimensions = $0 ? 50 : nil; map.saveSettings(p) }))

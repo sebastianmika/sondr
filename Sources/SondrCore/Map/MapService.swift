@@ -41,6 +41,8 @@ public struct MapPreview: Sendable {
     public let sampleIDs: [Int64]
     /// Their positions, in the same order.
     public let positions: [SIMD2<Float>]
+    /// Members of each collapsed multisample group by the fitted sample that stands for it (which is one of them).
+    let groups: [Int64: [Int64]]
     let state: TSNEModelState
     public let seconds: Double
     /// True if the layout was rotated, flipped and scaled to match the map that was current at the time.
@@ -77,8 +79,9 @@ public actor MapService {
         guard available.count >= MapParameters.minimumSamples else {
             throw MapError.notEnoughSamples(have: available.count, need: MapParameters.minimumSamples)
         }
-        let chosen = Self.randomSample(of: available, count: parameters.sampleSize, seed: parameters.seed)
-        let (ids, vectors) = try await loadVectors(chosen)
+        let (units, allGroups) = parameters.collapseMultisamples ? try await collapsedUnits(of: available) : (available, [:])
+        let chosen = Self.randomSample(of: units, count: parameters.sampleSize, seed: parameters.seed)
+        let (ids, vectors) = try await loadVectors(chosen, groups: allGroups)
         try Task.checkCancellation()
         guard ids.count >= MapParameters.minimumSamples else {
             throw MapError.notEnoughSamples(have: ids.count, need: MapParameters.minimumSamples)
@@ -103,8 +106,10 @@ public actor MapService {
             aligned = true
         }
         let seconds = started.duration(to: .now)
+        let fitted = Set(ids)
         return MapPreview(
-            parameters: parameters, modelVersion: modelVersion, sampleIDs: ids, positions: positions, state: state,
+            parameters: parameters, modelVersion: modelVersion, sampleIDs: ids, positions: positions,
+            groups: allGroups.filter { fitted.contains($0.key) }, state: state,
             seconds: Double(seconds.components.seconds) + Double(seconds.components.attoseconds) * 1e-18, isAligned: aligned)
     }
 
@@ -133,8 +138,16 @@ public actor MapService {
         var points = zip(preview.sampleIDs, preview.positions).map {
             MapPoint(sampleID: $0, x: $1.x, y: $1.y, fitted: true)
         }
-        let fitted = Set(preview.sampleIDs)
-        let rest = try await indexedSampleIDs().filter { !fitted.contains($0) }
+        var covered = Set(preview.sampleIDs)
+        let at = Dictionary(uniqueKeysWithValues: zip(preview.sampleIDs, preview.positions))
+        for (representative, members) in preview.groups {
+            guard let position = at[representative] else { continue }
+            for member in members where member != representative {
+                points.append(MapPoint(sampleID: member, x: position.x, y: position.y, fitted: false))
+                covered.insert(member)
+            }
+        }
+        let rest = try await indexedSampleIDs().filter { !covered.contains($0) }
         for start in stride(from: 0, to: rest.count, by: Self.chunk) {
             try Task.checkCancellation()
             onProgress?(MapProgress(stage: .placing, done: start, total: rest.count, positions: nil))
@@ -220,6 +233,56 @@ public actor MapService {
                     WHERE samples.embed_state = 'done' AND samples.missing = 0 ORDER BY samples.id
                     """)
         }
+    }
+
+    /// `available` with every multisample group (two or more members) reduced to one sample, plus the members
+    /// of each group by that sample. The stored representative stands for its group when it is available.
+    private func collapsedUnits(of available: [Int64]) async throws -> (units: [Int64], groups: [Int64: [Int64]]) {
+        let rows = try await database.writer.read { db -> [(id: Int64, group: Int64, representative: Int64?)] in
+            try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT samples.id, samples.group_id, sample_groups.representative_id
+                    FROM samples JOIN sample_groups ON sample_groups.id = samples.group_id
+                    """
+            ).map { ($0["id"], $0["group_id"], $0["representative_id"]) }
+        }
+        let isAvailable = Set(available)
+        var members: [Int64: [Int64]] = [:]
+        var representative: [Int64: Int64] = [:]
+        for row in rows where isAvailable.contains(row.id) {
+            members[row.group, default: []].append(row.id)
+            if let id = row.representative { representative[row.group] = id }
+        }
+        var groups: [Int64: [Int64]] = [:]
+        var absorbed = Set<Int64>()
+        for (group, ids) in members where ids.count > 1 {
+            let stand = representative[group].flatMap { ids.contains($0) ? $0 : nil } ?? ids.min()!
+            groups[stand] = ids.sorted()
+            absorbed.formUnion(ids.filter { $0 != stand })
+        }
+        return (available.filter { !absorbed.contains($0) }, groups)
+    }
+
+    /// Like ``loadVectors(_:)``, but a sample that stands for a group gets the normalised mean vector of its members.
+    private func loadVectors(_ ids: [Int64], groups: [Int64: [Int64]]) async throws -> (ids: [Int64], vectors: [Float]) {
+        guard !groups.isEmpty else { return try await loadVectors(ids) }
+        let size = EmbeddingService.embeddingSize
+        let (found, flat) = try await loadVectors(ids.flatMap { groups[$0] ?? [$0] })
+        let row = Dictionary(uniqueKeysWithValues: found.enumerated().map { ($1, $0) })
+        var kept: [Int64] = []
+        var vectors: [Float] = []
+        vectors.reserveCapacity(ids.count * size)
+        for id in ids {
+            let rows = (groups[id] ?? [id]).compactMap { row[$0] }
+            guard !rows.isEmpty else { continue }
+            var mean = [Float](repeating: 0, count: size)
+            for r in rows { for d in 0..<size { mean[d] += flat[r * size + d] } }
+            let norm = max(mean.reduce(0) { $0 + $1 * $1 }.squareRoot(), 1e-12)
+            kept.append(id)
+            vectors += mean.map { $0 / norm }
+        }
+        return (kept, vectors)
     }
 
     /// Vectors of `ids` (in that order) as one flat array. Samples without a readable vector are left out.

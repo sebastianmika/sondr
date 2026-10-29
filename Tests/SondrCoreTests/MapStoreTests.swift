@@ -249,6 +249,7 @@ private func save(_ db: Database, ids: [Int64], seed: Float = 0, version: String
     p.pcaDimensions = nil
     p.seed = 7
     p.learningRate = 150
+    p.collapseMultisamples = true
     let data = try JSONEncoder().encode(p)
     let value25 = try JSONDecoder().decode(MapParameters.self, from: data)
     #expect(value25 == p)
@@ -258,6 +259,7 @@ private func save(_ db: Database, ids: [Int64], seed: Float = 0, version: String
     let decoded = try JSONDecoder().decode(MapParameters.self, from: Data(#"{"perplexity": 12}"#.utf8))
     #expect(decoded.perplexity == 12)
     #expect(decoded.iterations == MapParameters().iterations)
+    #expect(!decoded.collapseMultisamples)
 }
 
 @Test func clampingKeepsEveryValueInItsDocumentedRange() {
