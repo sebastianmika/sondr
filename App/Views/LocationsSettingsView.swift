@@ -202,7 +202,7 @@ struct LocationEditor: View {
     @State private var previewError: String?
     @State private var filter = ""
     @State private var retagCount = 0
-    @State private var dropRareUpTo = 1
+    @State private var dropRareUpTo = 4
     @State private var reviewing = false
 
     private var tagging: LocationTagging {
