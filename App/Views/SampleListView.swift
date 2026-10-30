@@ -103,7 +103,11 @@ struct SampleListView: View {
         }
         .onChange(of: selection) { _, ids in
             Task {
-                if ids.count == 1, let id = ids.first { await browse.pin(id) }
+                if ids.count == 1, let id = ids.first {
+                    await browse.pin(id)
+                    await browse.reveal(id)
+                    scrollTarget = browse.visibleIDs.firstIndex(of: id)
+                }
                 playback.selectionChanged(to: ids.count == 1 ? ids.first.flatMap { browse.row($0) } : nil)
             }
         }

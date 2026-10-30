@@ -112,6 +112,12 @@ public final class BrowseModel {
         await loadPage(first: false, generation: generation)
     }
 
+    /// Loads further pages until the sample is among the rows, or there are none left.
+    /// shortcut: a sample inside a collapsed group never shows up, so this loads every page; fine for now.
+    public func reveal(_ id: Int64) async {
+        while !visibleIDs.contains(id), hasMore, !isLoading { await loadPage(first: false, generation: generation) }
+    }
+
     private func loadPage(first: Bool, generation current: Int) async {
         guard let database = app.database else { return }
         isLoading = true
