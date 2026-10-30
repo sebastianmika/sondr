@@ -7,7 +7,7 @@ struct SampleListView: View {
     @Bindable var browse: BrowseModel
     let playback: PlaybackModel
     @Binding var selection: Set<Int64>
-    @Environment(\.openSettings) private var openSettings
+    let addLocation: () -> Void
     @State private var sortOrder = [KeyPathComparator(\SampleRow.name)]
     @AppStorage(Preferences.showSoundMap) private var showSoundMap = false
     @AppStorage(Preferences.groupMultisamples) private var groupMultisamples = true
@@ -212,12 +212,9 @@ struct SampleListView: View {
                 ContentUnavailableView {
                     Label("Your library is empty", systemImage: "folder.badge.plus")
                 } description: {
-                    Text("Add a folder with audio samples in Settings. Sondr reads them but never changes them.")
+                    Text("Add a folder with audio samples. Sondr reads them but never changes them.")
                 } actions: {
-                    Button("Add Folder…") {
-                        UserDefaults.standard.set("locations", forKey: Preferences.settingsTab)
-                        openSettings()
-                    }
+                    Button("Add Folder…", action: addLocation)
                     .buttonStyle(.borderedProminent)
                 }
             } else {

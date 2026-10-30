@@ -13,6 +13,18 @@ public struct ScanStatus: Equatable, Sendable {
     public var progress: ScanProgress?
 }
 
+/// A scan waiting its turn in ``AppModel/scanQueue``, followed by indexing if `index` is set.
+public struct QueuedScan {
+    public var url: URL
+    var extensions: Set<String>?
+    var maxLength: Double?
+    var tagging: LocationTagging?
+    var multisampleRules: MultisampleRules?
+    var dropRareTagsUpTo: Int?
+    var name: String?
+    var index: Bool
+}
+
 /// State of the whole app: the open library, running jobs and the numbers the sidebar shows.
 /// Views read it; its methods are the only things that start jobs or change the library.
 @MainActor
@@ -38,7 +50,14 @@ public final class AppModel {
     public private(set) var lastIndexSummary: IndexSummary?
     /// Bumped whenever the set of samples may have changed, so lists reload.
     public private(set) var libraryVersion = 0
+    /// An error to show in an alert. Results of jobs go to ``notices``.
     public var message: String?
+    /// Results of finished jobs, newest last. They clear themselves a few seconds after the last one.
+    public private(set) var notices: [String] = []
+    /// Locations waiting to be scanned (and indexed); the first one is next.
+    public private(set) var scanQueue: [QueuedScan] = []
+    private var draining = false
+    private var noticeTask: Task<Void, Never>?
 
     public private(set) var database: LibraryDatabase?
     public let vectorIndex = VectorIndex()
@@ -76,6 +95,17 @@ public final class AppModel {
     public var isIndexing: Bool { indexProgress != nil }
     public var isRetagging: Bool { retagProgress != nil }
     public var isReclustering: Bool { reclusterProgress != nil }
+    /// True while a location is being scanned or indexed for ``addLocation(_:tagging:multisampleRules:dropRareTagsUpTo:name:)``.
+    public var isQueueRunning: Bool { draining }
+
+    private func note(_ text: String) {
+        notices = Array((notices + [text]).suffix(3))
+        noticeTask?.cancel()
+        noticeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(8))
+            if !Task.isCancelled { self?.notices = [] }
+        }
+    }
     /// Cluster colours for the sidebar, the table and the map.
     public var palette: ClusterPalette { ClusterPalette(clusters) }
 
@@ -142,24 +172,61 @@ public final class AppModel {
 
     // MARK: Locations and scanning
 
-    /// Adds a folder to the library and scans it. `tagging` (extra tags and blacklist) is stored on the
-    /// location and applies to every sample found in it.
+    /// Adds a folder to the library, scans it and indexes it, one queued location after the other. `tagging`
+    /// (extra tags and blacklist) is stored on the location and applies to every sample found in it.
     ///
     /// With `dropRareTagsUpTo`, the new samples' auto tags used by that many samples or fewer, or by under 1% of
     /// them, are removed.
+    ///
+    /// If the queue is already running, the location joins it and this returns at once; otherwise it returns when
+    /// the queue is empty.
     public func addLocation(
         _ url: URL, tagging: LocationTagging? = nil, multisampleRules: MultisampleRules? = nil,
         dropRareTagsUpTo: Int? = nil, name: String? = nil
     ) async {
-        let scanned = await scan(
-            url, extensions: nil, maxLength: nil, tagging: tagging, multisampleRules: multisampleRules,
-            dropRareTagsUpTo: dropRareTagsUpTo, name: name)
-        if scanned && modelsAvailable { await startIndexing() }
+        await enqueue([
+            QueuedScan(
+                url: url, extensions: nil, maxLength: nil, tagging: tagging, multisampleRules: multisampleRules,
+                dropRareTagsUpTo: dropRareTagsUpTo, name: name, index: true)
+        ])
     }
 
     /// Scans every known location again, one after the other.
     public func rescanAll() async {
-        for location in locations { await rescan(location) }
+        await enqueue(locations.map(rescanItem))
+    }
+
+    /// Scans a known location again with the settings it was added with.
+    public func rescan(_ location: LocationInfo) async {
+        await enqueue([rescanItem(location)])
+    }
+
+    private func rescanItem(_ location: LocationInfo) -> QueuedScan {
+        let extensions = location.typeFilter.map { Set($0.split(separator: ",").map(String.init)) }
+        return QueuedScan(
+            url: URL(fileURLWithPath: location.path), extensions: extensions, maxLength: location.maxLength,
+            index: false)
+    }
+
+    private func enqueue(_ items: [QueuedScan]) async {
+        scanQueue += items
+        guard !draining else { return }
+        draining = true
+        defer { draining = false }
+        while !scanQueue.isEmpty {
+            let item = scanQueue.removeFirst()
+            // A job the user started by hand holds the turn.
+            while isScanning || isIndexing || isRetagging { try? await Task.sleep(for: .milliseconds(250)) }
+            await run(item)
+        }
+    }
+
+    private func run(_ item: QueuedScan) async {
+        guard let summary = await scan(item) else { return }
+        var text =
+            "\(item.url.lastPathComponent): \(summary.new) new, \(summary.duplicate) duplicates, \(summary.errors) unreadable."
+        if item.index && modelsAvailable, let indexed = await runIndexing(retryFailed: false) { text += " " + indexed }
+        note(text)
     }
 
     /// What adding `url` with these settings would tag; see ``TagPreview``.
@@ -167,30 +234,21 @@ public final class AppModel {
         try await TagPreview.scan(root: url, tagger: Tagger.bundled())
     }
 
-    /// Scans a known location again with the settings it was added with.
-    public func rescan(_ location: LocationInfo) async {
-        let extensions = location.typeFilter.map { Set($0.split(separator: ",").map(String.init)) }
-        await scan(URL(fileURLWithPath: location.path), extensions: extensions, maxLength: location.maxLength)
-    }
-
-    /// Returns whether the scan ran to the end.
-    @discardableResult
-    private func scan(_ url: URL, extensions: Set<String>?, maxLength: Double?, tagging: LocationTagging? = nil,
-        multisampleRules: MultisampleRules? = nil, dropRareTagsUpTo: Int? = nil, name: String? = nil) async -> Bool {
-        guard let database, !isScanning, !isIndexing, !isRetagging else { return false }
-        var completed = false
-        scanStatus = ScanStatus(location: url.path, progress: nil)
+    /// Returns the summary if the scan ran to the end.
+    private func scan(_ item: QueuedScan) async -> ScanSummary? {
+        guard let database, !isScanning, !isIndexing, !isRetagging else { return nil }
+        var completed: ScanSummary?
+        scanStatus = ScanStatus(location: item.url.path, progress: nil)
         defer { scanStatus = nil }
         do {
             let scanner = try LibraryScanner(database: database)
-            let summary = try await scanner.scan(root: url, extensions: extensions, maxLength: maxLength, tagging: tagging, multisampleRules: multisampleRules, dropRareTagsUpTo: dropRareTagsUpTo, name: name) { [weak self] progress in
+            let summary = try await scanner.scan(root: item.url, extensions: item.extensions, maxLength: item.maxLength, tagging: item.tagging, multisampleRules: item.multisampleRules, dropRareTagsUpTo: item.dropRareTagsUpTo, name: item.name) { [weak self] progress in
                 Task { @MainActor [weak self] in self?.scanStatus?.progress = progress }
             }
             lastScanSummary = summary
             try await vectorIndex.load(from: database)  // files that vanished leave the index
             await regroup()
-            message = "Scanned \(url.lastPathComponent): \(summary.new) new, \(summary.duplicate) duplicates, \(summary.errors) unreadable."
-            completed = true
+            completed = summary
         } catch {
             message = error.localizedDescription
         }
@@ -216,11 +274,11 @@ public final class AppModel {
 
     /// Removes a location from the library. Audio files are not touched.
     public func removeLocation(_ location: LocationInfo) async {
-        guard let database, !isScanning, !isIndexing, !isRetagging else { return }
+        guard let database, !isScanning, !isIndexing, !isRetagging, !draining else { return }
         do {
             let removed = try await database.writer.write { try LibraryInfo.removeLocation($0, id: location.id) }
             for id in removed { await vectorIndex.remove(id: id) }
-            message = "Removed \(location.path) and \(removed.count) samples."
+            note("Removed \(location.path) and \(removed.count) samples.")
         } catch {
             message = error.localizedDescription
         }
@@ -289,7 +347,7 @@ public final class AppModel {
             let run = try TagRetagJob.start(database: database, tagger: Tagger.bundled())
             for await progress in run.progress { retagProgress = progress }
             let summary = try await run.result()
-            message = summary.cancelled ? "Retagging stopped." : "Retagged \(summary.samples) samples."
+            note(summary.cancelled ? "Retagging stopped." : "Retagged \(summary.samples) samples.")
         } catch {
             message = error.localizedDescription
         }
@@ -313,7 +371,7 @@ public final class AppModel {
         do {
             let needsReassign = try await database.writer.write { try ClusterReassignJob.commit($0, edited: edited) }
             if !needsReassign {
-                message = "Clusters saved."
+                note("Clusters saved.")
                 await refresh()
             }
         } catch {
@@ -341,7 +399,7 @@ public final class AppModel {
             reclusterRun = run
             for await progress in run.progress { reclusterProgress = progress }
             let summary = try await run.result()
-            message = summary.cancelled ? "Sorting into clusters stopped." : "Sorted \(summary.samples) samples into clusters."
+            note(summary.cancelled ? "Sorting into clusters stopped." : "Sorted \(summary.samples) samples into clusters.")
         } catch {
             message = error.localizedDescription
         }
@@ -401,10 +459,16 @@ public final class AppModel {
     // MARK: Indexing
 
     public func startIndexing(retryFailed: Bool = false) async {
+        if let text = await runIndexing(retryFailed: retryFailed) { note(text) }
+    }
+
+    /// Returns the result text if indexing ran to the end or was stopped.
+    private func runIndexing(retryFailed: Bool) async -> String? {
         guard let database, let embedder, !isIndexing else {
             if embedder == nil { message = "The Core ML models were not found. See the README for how to build them." }
-            return
+            return nil
         }
+        var result: String?
         do {
             let run = try IndexJob.start(
                 database: database, embedder: embedder, retryFailed: retryFailed, vectorIndex: vectorIndex)
@@ -416,10 +480,7 @@ public final class AppModel {
             }
             let summary = try await run.result()
             lastIndexSummary = summary
-            message = summary.cancelled
-                ? "Indexing stopped: \(summary.done) done."
-                : "Indexed \(summary.done) samples, \(summary.failed) failed."
-                    + (summary.backfilled > 0 ? " Added spectrograms to \(summary.backfilled)." : "")
+            result = summary.cancelled ? "Indexing stopped: \(summary.done) done." : summary.message
         } catch {
             message = error.localizedDescription
         }
@@ -427,6 +488,7 @@ public final class AppModel {
         indexProgress = nil
         await map?.placeNewSamples()
         await refresh()
+        return result
     }
 
     public func cancelIndexing() { indexRun?.cancel() }

@@ -12,6 +12,7 @@ struct SidebarView: View {
     @Binding var selection: SidebarItem?
     let browse: BrowseModel
     @Binding var showingFailures: Bool
+    let addLocation: () -> Void
     @State private var managingTags = false
     @State private var tagSearch = ""
 
@@ -24,7 +25,7 @@ struct SidebarView: View {
                     row("Unsorted", count: app.unsortedCount) { Image(systemName: "questionmark.folder") }
                         .tag(SidebarItem.unsorted)
                 } header: {
-                    header("Library") { openSettings(tab: "locations") }
+                    header("Library", add: addLocation) { openSettings(tab: "locations") }
                 }
                 Section {
                     ForEach(app.clusters) { cluster in
@@ -64,10 +65,16 @@ struct SidebarView: View {
     }
 
     /// Section title with a small "Manage…" link; the same for every section.
-    private func header(_ title: String, manage: @escaping () -> Void) -> some View {
+    private func header(_ title: String, add: (() -> Void)? = nil, manage: @escaping () -> Void) -> some View {
         HStack {
             Text(title).sondrLabel()
             Spacer()
+            if let add {
+                Button(action: add) { Image(systemName: "plus") }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .help("Add a folder with audio samples")
+            }
             Button("Manage…", action: manage)
                 .buttonStyle(.link)
                 .font(.caption)

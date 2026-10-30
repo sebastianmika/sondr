@@ -19,6 +19,9 @@ struct JobsBar: View {
                     }
                 }
             }
+            ForEach(Array(app.scanQueue.enumerated()), id: \.offset) { _, item in
+                Text("Queued: \(item.url.lastPathComponent)").font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
+            }
             if let retag = app.retagProgress {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Updating tags").sondrLabel()
@@ -49,6 +52,9 @@ struct JobsBar: View {
                 }
             } else if app.stats.failed > 0 {
                 Button("\(app.stats.failed) failed") { showingFailures = true }.buttonStyle(.link)
+            }
+            ForEach(Array(app.notices.enumerated()), id: \.offset) { _, text in
+                Text(text).font(.sondrMono(size: 10.5)).foregroundStyle(Theme.signal)
             }
             Text(summary).font(.sondrMono(size: 10.5)).foregroundStyle(Theme.textDim)
         }

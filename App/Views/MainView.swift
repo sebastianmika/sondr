@@ -10,15 +10,17 @@ struct MainView: View {
     @State private var selection = Set<Int64>()
     @State private var sidebar: SidebarItem? = .all
     @State private var showingFailures = false
+    @State private var importing = false
+    @State private var adding: LocationEditor.Mode?
 
     var body: some View {
         Group {
             if let browse {
                 NavigationSplitView {
-                    SidebarView(selection: $sidebar, browse: browse, showingFailures: $showingFailures)
+                    SidebarView(selection: $sidebar, browse: browse, showingFailures: $showingFailures, addLocation: { importing = true })
                         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
                 } content: {
-                    SampleListView(browse: browse, playback: playback, selection: $selection)
+                    SampleListView(browse: browse, playback: playback, selection: $selection, addLocation: { importing = true })
                         .navigationSplitViewColumnWidth(min: 400, ideal: 520)
                 } detail: {
                     DetailView(browse: browse, playback: playback, selection: selection)
@@ -47,6 +49,10 @@ struct MainView: View {
             Task { await browse.reload() }
         }
         .sheet(isPresented: $showingFailures) { FailuresView() }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.folder]) { result in
+            if case .success(let url) = result { adding = .add(url) }
+        }
+        .sheet(item: $adding) { LocationEditor(mode: $0) }
         .alert(
             "Sondr",
             isPresented: Binding(get: { app.message != nil }, set: { if !$0 { app.message = nil } }),

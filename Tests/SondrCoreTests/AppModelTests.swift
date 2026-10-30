@@ -913,7 +913,7 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     #expect(app.clusters.last?.color == "#123456")
     #expect(app.clusters.map(\.count).reduce(0, +) + app.unsortedCount == 24)
     #expect(app.reclusterProgress == nil)
-    #expect(app.message == "Sorted 24 samples into clusters.")
+    #expect(app.notices.last == "Sorted 24 samples into clusters.")
     #expect(app.palette.rgb(forCluster: 14) == .init(red: 0x12, green: 0x34, blue: 0x56))
 }
 
@@ -929,4 +929,27 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
 
     #expect(app.message == ClusterError.invalidEdit("At least one cluster is needed.").errorDescription)
     #expect(app.clusters.count == 14)
+}
+
+@MainActor @Test func locationsAddedWhileTheQueueRunsAreScannedAndIndexedInOrder() async throws {
+    let work = try Workspace(files: 6)
+    defer { work.remove() }
+    let second = work.folder.appendingPathComponent("Second")
+    try TestLibraryGenerator.generate(count: 4, into: second)
+    let app = work.model()
+    await app.start()
+
+    let first = Task { await app.addLocation(work.library) }
+    while !app.isQueueRunning { await Task.yield() }
+    await app.addLocation(second)  // joins the running queue and returns at once
+    #expect(app.isQueueRunning)
+    await first.value
+
+    #expect(!app.isQueueRunning && app.scanQueue.isEmpty)
+    #expect(app.locations.count == 2)
+    #expect(app.stats.pending == 0)
+    #expect(app.notices.count == 2)
+    #expect(app.notices[0].hasPrefix("Samples: ") && app.notices[0].contains("Indexed"))
+    #expect(app.notices[1].hasPrefix("Second: "))
+    #expect(app.message == nil)
 }

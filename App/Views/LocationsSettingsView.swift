@@ -20,7 +20,7 @@ struct LocationsSettingsView: View {
                     LocationRow(location: location, edit: { editing = .edit(location) }, review: { reviewing = location }, remove: { removing = location })
                 }
                 HStack {
-                    Button("Add Location…") { importing = true }.disabled(busy)
+                    Button("Add Location…") { importing = true }
                     Button("Rescan All") { Task { await app.rescanAll() } }
                         .disabled(busy || app.locations.isEmpty)
                     Button(app.stats.pending > 0 ? "Index \(app.stats.pending.formatted())" : "Index") {
@@ -63,6 +63,7 @@ struct LocationsSettingsView: View {
     private var progressText: String? {
         if let retag = app.retagProgress { return "Retagging \(retag.done.formatted()) of \(retag.total.formatted())…" }
         if app.isScanning { return "Scanning…" }
+        if !app.scanQueue.isEmpty { return "\(app.scanQueue.count) queued" }
         return nil
     }
 }
@@ -290,7 +291,7 @@ struct LocationEditor: View {
         if case .edit(let location) = mode {
             return name != location.name || tagging != location.tagging || cleanedGroupRules != location.multisampleRules || retagCount > 0
         }
-        return !(app.isScanning || app.isIndexing || app.isRetagging)
+        return true  // a busy app queues the new location
     }
 
     private var rareTagsSection: some View {
