@@ -48,6 +48,9 @@ public final class BrowseModel {
 
     /// Whether ``rows`` was loaded with groups collapsed. Unlike ``collapseGroups`` it changes together with the rows.
     public private(set) var showsGroups = true
+    /// Counts the lists applied from the first page; the view starts its table afresh for each, because a
+    /// table whose rows turn into group rows (or back) can keep stale ones.
+    public private(set) var listEpoch = 0
     public private(set) var rows: [SampleRow] = []
     public private(set) var total = 0
     public private(set) var scores: [Int64: Float] = [:]
@@ -124,6 +127,7 @@ public final class BrowseModel {
             if first {
                 forgetMembers()
                 showsGroups = collapse
+                listEpoch += 1
             }
             rows = first ? page.rows : rows + page.rows
             total = page.total

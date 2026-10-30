@@ -41,6 +41,25 @@ public enum MultisampleGroups {
         }
     }
 
+    /// The location of a sample (its first, when it is in several).
+    public static func locationID(database: LibraryDatabase, ofSample id: Int64) async throws -> Int64? {
+        try await database.writer.read {
+            try Int64.fetchOne($0, sql: "SELECT location_id FROM sample_paths WHERE sample_id = ? ORDER BY location_id LIMIT 1", arguments: [id])
+        }
+    }
+
+    /// Puts the samples into the existing group `groupID`, or into a new group called `name` in the location
+    /// of the first sample when `groupID` is nil. Names are not unique, so adding is always by id.
+    public static func place(database: LibraryDatabase, sampleIDs: [Int64], name: String, into groupID: Int64?) async throws {
+        if let groupID {
+            try await addMembers(database: database, groupID: groupID, sampleIDs: sampleIDs)
+        } else {
+            guard let first = sampleIDs.first, let location = try await locationID(database: database, ofSample: first)
+            else { throw MultisampleGroupError.noSamples }
+            try await create(database: database, locationID: location, name: name, sampleIDs: sampleIDs)
+        }
+    }
+
     public static func rename(database: LibraryDatabase, groupID: Int64, name: String) async throws {
         let name = try cleaned(name)
         try await database.writer.write { db in

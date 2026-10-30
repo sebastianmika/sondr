@@ -12,8 +12,7 @@ struct SampleListView: View {
     @AppStorage(Preferences.showSoundMap) private var showSoundMap = false
     @AppStorage(Preferences.groupMultisamples) private var groupMultisamples = true
     @State private var scrollTarget: Int?
-    @State private var pendingGroup: [Int64] = []
-    @State private var groupName = ""
+    @State private var pendingGroup: [SampleRow] = []
 
     private static let pageStep = 10
 
@@ -80,30 +79,22 @@ struct SampleListView: View {
             }
         }
         // A Table whose rows switch between TableRow and DisclosureTableRow can keep stale rows; start afresh.
-        .id(browse.showsGroups)
+        .id(browse.listEpoch)
         .contextMenu(forSelectionType: Int64.self) { ids in
             if let row = browse.rows(for: ids).first, ids.count == 1 {
                 Button("Play") { playback.play(row) }
                 Button("Find Similar") { Task { await browse.showSimilar(to: row) } }.disabled(!app.modelsAvailable)
             }
             Button("Group Samples…") {
-                let rows = browse.rows(for: ids)
-                groupName = rows.first?.name ?? ""
-                pendingGroup = rows.map(\.id)
+                pendingGroup = browse.rows(for: ids)
             }
             .disabled(ids.count < 2)
             Button("Show in Finder") { reveal(ids) }
         } primaryAction: { ids in
             if let row = browse.rows(for: ids).first { playback.toggle(row) }
         }
-        .alert("Group \(pendingGroup.count) samples", isPresented: Binding(get: { !pendingGroup.isEmpty }, set: { if !$0 { pendingGroup = [] } })) {
-            TextField("Group name", text: $groupName)
-            Button("Group") {
-                let ids = pendingGroup
-                let name = groupName
-                Task { await app.group(sampleIDs: ids, named: name) }
-            }
-            Button("Cancel", role: .cancel) {}
+        .sheet(isPresented: Binding(get: { !pendingGroup.isEmpty }, set: { if !$0 { pendingGroup = [] } })) {
+            GroupSamplesSheet(rows: pendingGroup)
         }
         .onChange(of: groupMultisamples, initial: true) { _, on in browse.collapseGroups = on }
         .onChange(of: sortOrder) { _, order in
@@ -391,4 +382,64 @@ struct ClusterLabelStyle: LabelStyle {
 
 func formatDuration(_ seconds: Double) -> String {
     seconds < 10 ? String(format: "%.2f s", seconds) : String(format: "%d:%02d", Int(seconds) / 60, Int(seconds) % 60)
+}
+
+
+/// Names a new group for the samples, or picks an existing group of the first sample's location to add them to.
+/// Typing filters the existing groups; the button says which of the two will happen.
+private struct GroupSamplesSheet: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    let rows: [SampleRow]
+    @State private var name = ""
+    @State private var existing: [MultisampleGroups.Info] = []
+    @State private var target: MultisampleGroups.Info?
+
+    private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var matches: [MultisampleGroups.Info] {
+        trimmed.isEmpty ? existing : existing.filter { $0.name.localizedCaseInsensitiveContains(trimmed) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Group \(rows.count) samples").font(.headline)
+            TextField("New group name, or search existing groups", text: $name)
+                .onChange(of: name) { _, text in
+                    if let target, target.name != text { self.target = nil }
+                }
+            List(matches, selection: Binding(get: { target?.id }, set: { id in
+                target = existing.first { $0.id == id }
+                if let target { name = target.name }
+            })) { info in
+                HStack {
+                    Text(info.name).lineLimit(1)
+                    Spacer()
+                    Text("\(info.size) samples").font(.caption).foregroundStyle(.secondary)
+                }
+                .tag(info.id)
+            }
+            .frame(height: 160)
+            .overlay { if matches.isEmpty { Text("No existing group matches").foregroundStyle(.secondary) } }
+            HStack {
+                Text(target.map { "Adds to the existing group “\($0.name)”" } ?? "Creates a new group")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(target == nil ? "Create" : "Add") {
+                    let ids = rows.map(\.id), name = trimmed, groupID = target?.id
+                    Task {
+                        await app.group(sampleIDs: ids, named: name, into: groupID)
+                        dismiss()
+                    }
+                }
+                .keyboardShortcut(.defaultAction).disabled(trimmed.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+        .task {
+            name = rows.first?.name ?? ""
+            if let first = rows.first { existing = await app.groups(forSample: first.id) }
+        }
+    }
 }

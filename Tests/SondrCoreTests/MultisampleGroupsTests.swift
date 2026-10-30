@@ -155,3 +155,16 @@ private func groups(_ database: LibraryDatabase) async throws -> [MultisampleGro
     _ = try await MultisampleGrouper.rebuild(database: database, locationID: 1)
     #expect(try await groups(database).map(\.name) == ["Piano_G3"])
 }
+
+@Test func placeAddsToTheGivenGroupAndCreatesOnlyWithoutOne() async throws {
+    let database = try makeLibrary(files: keys + loose)
+    try await MultisampleGroups.place(database: database, sampleIDs: [1, 2, 3], name: "Keys", into: nil)
+    let id = try #require(try await groups(database).first?.id)
+
+    try await MultisampleGroups.place(database: database, sampleIDs: [4, 5], name: "Keys", into: id)
+    #expect(try await groups(database).count == 1)
+    #expect(try members(database, id) == [1, 2, 3, 4, 5])
+
+    try await MultisampleGroups.place(database: database, sampleIDs: [6, 7, 8], name: "Keys", into: nil)
+    #expect(try await groups(database).count == 2)
+}
