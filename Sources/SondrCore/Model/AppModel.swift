@@ -470,6 +470,18 @@ public final class AppModel {
         await refresh()
     }
 
+    /// A new manual group of the samples, in the location of the first one; see ``MultisampleGroups/create(database:locationID:name:sampleIDs:)``.
+    public func group(sampleIDs: [Int64], named name: String) async {
+        guard let first = sampleIDs.first else { return }
+        await editGroups { database in
+            let location = try await database.writer.read {
+                try Int64.fetchOne($0, sql: "SELECT location_id FROM sample_paths WHERE sample_id = ? ORDER BY location_id LIMIT 1", arguments: [first])
+            }
+            guard let location else { throw MultisampleGroupError.noSamples }
+            try await MultisampleGroups.create(database: database, locationID: location, name: name, sampleIDs: sampleIDs)
+        }
+    }
+
     /// Finds multisample groups again in every location; see ``MultisampleGrouper``. Groups whose members
     /// are not indexed yet are picked up by the run after indexing.
     public func regroup() async {

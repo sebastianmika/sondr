@@ -12,6 +12,8 @@ struct SampleListView: View {
     @AppStorage(Preferences.showSoundMap) private var showSoundMap = false
     @AppStorage(Preferences.groupMultisamples) private var groupMultisamples = true
     @State private var scrollTarget: Int?
+    @State private var pendingGroup: [Int64] = []
+    @State private var groupName = ""
 
     private static let pageStep = 10
 
@@ -84,9 +86,24 @@ struct SampleListView: View {
                 Button("Play") { playback.play(row) }
                 Button("Find Similar") { Task { await browse.showSimilar(to: row) } }.disabled(!app.modelsAvailable)
             }
+            Button("Group Samples…") {
+                let rows = browse.rows(for: ids)
+                groupName = rows.first?.name ?? ""
+                pendingGroup = rows.map(\.id)
+            }
+            .disabled(ids.count < 2)
             Button("Show in Finder") { reveal(ids) }
         } primaryAction: { ids in
             if let row = browse.rows(for: ids).first { playback.toggle(row) }
+        }
+        .alert("Group \(pendingGroup.count) samples", isPresented: Binding(get: { !pendingGroup.isEmpty }, set: { if !$0 { pendingGroup = [] } })) {
+            TextField("Group name", text: $groupName)
+            Button("Group") {
+                let ids = pendingGroup
+                let name = groupName
+                Task { await app.group(sampleIDs: ids, named: name) }
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .onChange(of: groupMultisamples, initial: true) { _, on in browse.collapseGroups = on }
         .onChange(of: sortOrder) { _, order in
