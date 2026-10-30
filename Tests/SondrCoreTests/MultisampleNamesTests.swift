@@ -144,3 +144,10 @@ func parseKeepsOtherTextAfterTheNote(stem: String) throws {
     let parsed = try #require(MultisampleNames.parse(stem: "2 Kick C3"))
     #expect(parsed.key == "2 kick {p}")
 }
+
+@Test func tempoSeriesWithoutRootNotesAreNotMultisamples() {
+    let paths = ["075", "090", "100", "110", "120"].map { "Breaks/\($0) Service Vinyl Breaks.wav" }
+    let group = MultisampleNames.groups(paths: paths)
+    #expect(group.count == 1)
+    #expect(!MultisampleNames.isBackedByMetadata(group[0], rootNotes: Array(repeating: nil, count: paths.count)))
+}

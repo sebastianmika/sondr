@@ -4,7 +4,7 @@ import GRDB
 /// Turns the groups that file names suggest (``MultisampleNames``) into stored multisample groups.
 ///
 /// A candidate is accepted when file metadata backs the pitches (root notes agree with the names up to a
-/// whole number of octaves), or, for note names without usable metadata, when the members sound alike.
+/// whole number of octaves), or, for note names without usable metadata, when the members sound alike or span at least `wideSetPitches` pitches.
 /// Numbers in names are accepted only with metadata. Candidates whose members are not all indexed yet are
 /// left for a later run. A run replaces all groups of one location, so it can be repeated at any time.
 public enum MultisampleGrouper {
@@ -12,6 +12,10 @@ public enum MultisampleGrouper {
     /// Provisional; tune on a real library.
     public static let minimumSimilarity: Float = 0.8
     static let similaritySample = 16
+    /// Note-named sets with this many distinct pitches are accepted without the similarity check: samples
+    /// seven octaves apart (`Flute C1`..`C7`) sound too different for it, and a name pattern that
+    /// repeats over a dozen pitches is not a coincidence.
+    static let wideSetPitches = 12
 
     public struct Summary: Equatable, Sendable {
         public var groups = 0
@@ -138,6 +142,7 @@ public enum MultisampleGrouper {
         }
         if MultisampleNames.isBackedByMetadata(group, rootNotes: notes) { return .accept }
         guard group.kind == .note else { return .reject }
+        if group.pitches.count >= wideSetPitches { return .accept }
         if rows.contains(where: { $0.embedState == "pending" }) { return .later }
 
         let ids = rows.filter { $0.embedState == "done" }.map(\.sampleID)

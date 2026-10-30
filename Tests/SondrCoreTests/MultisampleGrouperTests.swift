@@ -125,3 +125,10 @@ private func groupedSamples(_ database: LibraryDatabase) throws -> [(String, Int
     #expect(!MultisampleNames.isBackedByMetadata(group, rootNotes: [70, 72, 71, 73, 74, 75]))
     #expect(!MultisampleNames.isBackedByMetadata(group, rootNotes: [71, 72, 73, 74, 75, 76]))
 }
+
+@Test func rebuildAcceptsWideNoteSetsEvenWhenTheySoundDifferent() async throws {
+    let files = (36..<48).map { "Keys/Flute_\(MultisampleNames.noteLabel($0)).wav" }
+    let database = try makeLibrary(files: files, sound: { file in files.firstIndex(of: file) ?? 0 })
+    let summary = try await MultisampleGrouper.rebuild(database: database, locationID: 1)
+    #expect(summary == .init(groups: 1, samples: 12, rejected: 0, deferred: 0))
+}
