@@ -48,6 +48,7 @@ public enum MultisampleNames {
 
     private static let noteName = regex("(?<![A-Za-z0-9#])([A-Ga-g])([#b]?)(-?[0-9])(?![A-Za-z0-9])")
     private static let number = regex("(?<![A-Za-z0-9])([0-9]{1,3})(?![A-Za-z0-9])(?!\\s*bpm)")
+    private static let leadingNumber = regex("^([0-9]{1,3})[ _.-]+")
     private static let layerToken = regex("(?<![A-Za-z0-9])((?:v|vel|rr)[0-9]+)(?![A-Za-z0-9])", options: .caseInsensitive)
     /// A pack's per-file id after the note (`C#2-ASAU`): a hyphen and four capitals or digits at the end.
     private static let idSuffix = regex("^-[A-Z0-9]{4}$")
@@ -88,6 +89,7 @@ public enum MultisampleNames {
                 key = String(key.dropLast(tail.count))
             }
             key = removingPitchIndex(from: key, numbers: pitchNumbers())
+            key = removingLeadingNoteNumber(from: key, midi: midi)
             let label = "\(match.captures[0].uppercased())\(match.captures[1])\(match.captures[2])"
             return Parsed(key: normalised(key), midi: midi, kind: .note, layer: layer ?? take, label: label)
         }
@@ -104,6 +106,15 @@ public enum MultisampleNames {
             }
         }
         return result
+    }
+
+    /// A leading number that is the note's own MIDI number up to whole octaves (`61 Violin Mirage C#3`: C#3 is
+    /// 49 with C4 = 60, 61 with C3 = 60) is an index of the pitch, not part of the instrument's name.
+    private static func removingLeadingNoteNumber(from key: String, midi: Int) -> String {
+        guard let match = groups(of: leadingNumber, in: key).first, let value = Int(match.captures[0]),
+            value <= 127, (value - midi) % 12 == 0
+        else { return key }
+        return String(key[match.range.upperBound...])
     }
 
     private struct Match {

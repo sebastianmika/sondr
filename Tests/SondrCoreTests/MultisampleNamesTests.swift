@@ -132,3 +132,15 @@ func parseKeepsOtherTextAfterTheNote(stem: String) throws {
     #expect(groups.first?.members.count == 4)
     #expect(groups.first?.key == "return home kawaii {p}")
 }
+
+@Test func parseDropsALeadingNumberThatIsTheNotesMidiNumberUpToOctaves() throws {
+    let low = try #require(MultisampleNames.parse(stem: "61 Violin Mirage C#3"))
+    let high = try #require(MultisampleNames.parse(stem: "62 Violin Mirage D3"))
+    #expect(low.key == "violin mirage {p}")
+    #expect(low.key == high.key)
+}
+
+@Test func parseKeepsALeadingNumberThatIsNotThePitch() throws {
+    let parsed = try #require(MultisampleNames.parse(stem: "2 Kick C3"))
+    #expect(parsed.key == "2 kick {p}")
+}
