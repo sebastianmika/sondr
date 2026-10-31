@@ -47,8 +47,8 @@ import Testing
         ])
         let eldrum = try writeKit(sidecar: sidecar)
         let loaded = try database.writer.read { try EldrumLoad.load(eldrum: eldrum, db: $0) }
-        #expect(loaded.pads[0]?.link == .linked(sampleID: 1, path: "/lib/moved/kick.aif"))
-        #expect(loaded.pads[1]?.link == .notInLibrary(originalPath: "/old/snare.aif"))
+        #expect(loaded.pads[0]?.link == .linked(sampleID: 1, path: "/lib/moved/kick.aif", contentHash: "h1"))
+        #expect(loaded.pads[1]?.link == .notInLibrary(originalPath: "/old/snare.aif", contentHash: "gone"))
         #expect(loaded.pads[2] == nil)
     }
 
@@ -58,7 +58,7 @@ import Testing
         let hash = try LibraryScanner.sha256(of: dir.appendingPathComponent("a.wav"))
         let database = try library(hashes: [hash: "/lib/a.wav"])
         let loaded = try database.writer.read { try EldrumLoad.load(eldrum: eldrum, db: $0) }
-        #expect(loaded.pads[0]?.link == .linked(sampleID: 1, path: "/lib/a.wav"))
+        #expect(loaded.pads[0]?.link == .linked(sampleID: 1, path: "/lib/a.wav", contentHash: hash))
         #expect(loaded.pads[1]?.link == .unknown)
     }
 
@@ -69,5 +69,23 @@ import Testing
         let eldrum = try writeKit(sidecar: sidecar)
         let loaded = try database.writer.read { try EldrumLoad.load(eldrum: eldrum, db: $0) }
         #expect(loaded.pads[0]?.link == .unknown)
+    }
+
+    @Test func sourceLooksUpALibraryPath() throws {
+        let database = try library(hashes: ["h1": "/lib/k.aif"])
+        let (found, absent) = try database.writer.read { db in
+            (try EldrumLoad.source(db, path: "/lib/k.aif"), try EldrumLoad.source(db, path: "/elsewhere.aif"))
+        }
+        #expect(found == .init(contentHash: "h1", path: "/lib/k.aif"))
+        #expect(absent == nil)
+    }
+
+    @Test func sourcesFallBackToTheKitWavForUnlinkedPads() throws {
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let sidecar = EldrumSidecar(slots: [.init(pad: 0, contentHash: "gone", originalPath: "/old/a.aif", filename: "a.wav")])
+        let eldrum = try writeKit(sidecar: sidecar, files: ["a.wav": "x"])
+        let database = try library(hashes: [:])
+        let loaded = try database.writer.read { try EldrumLoad.load(eldrum: eldrum, db: $0) }
+        #expect(loaded.sources[0] == .init(contentHash: "gone", path: dir.appendingPathComponent("a.wav").path))
     }
 }
