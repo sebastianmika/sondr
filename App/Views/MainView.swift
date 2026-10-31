@@ -12,6 +12,7 @@ struct MainView: View {
     @State private var showingFailures = false
     @State private var importing = false
     @State private var adding: LocationEditor.Mode?
+    @State private var buildingKit = false
 
     var body: some View {
         Group {
@@ -53,6 +54,8 @@ struct MainView: View {
             if case .success(let url) = result { adding = .add(url) }
         }
         .sheet(item: $adding) { LocationEditor(mode: $0) }
+        .sheet(isPresented: $buildingKit) { EldrumEditorView() }
+        .toolbar { ToolbarItem { Button { buildingKit = true } label: { Label("Tonverk Kit", systemImage: "square.grid.4x3.fill") } } }
         .alert(
             "Sondr",
             isPresented: Binding(get: { app.message != nil }, set: { if !$0 { app.message = nil } }),
