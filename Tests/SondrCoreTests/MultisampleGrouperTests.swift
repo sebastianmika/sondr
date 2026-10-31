@@ -67,6 +67,14 @@ private func groupedSamples(_ database: LibraryDatabase) throws -> [(String, Int
     #expect(name == "Piano_G3")
 }
 
+@Test func rebuildNamesTheGroupAfterTheRepresentativesDisplayName() async throws {
+    let database = try makeLibrary(files: piano, sound: { _ in 1 })
+    try await database.writer.write { try $0.execute(sql: "UPDATE samples SET name = 'Piano_G3.wav' WHERE id = 3") }
+    try await MultisampleGrouper.rebuild(database: database, locationID: 1)
+    let name = try await database.writer.read { try String.fetchOne($0, sql: "SELECT name FROM sample_groups") }
+    #expect(name == "Piano_G3")
+}
+
 @Test func rebuildRejectsNoteNamesOnDifferentSounds() async throws {
     let database = try makeLibrary(files: piano, sound: { Int($0.dropFirst(11).prefix(1).utf8.first ?? 0) })
     let summary = try await MultisampleGrouper.rebuild(database: database, locationID: 1)

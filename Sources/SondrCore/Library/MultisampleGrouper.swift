@@ -101,7 +101,9 @@ public enum MultisampleGrouper {
                 let medianPitch = Array(Set(members.map { $0.0.midi })).sorted().medianValue
                 guard let representative = members.first(where: { $0.0.midi == medianPitch })
                 else { continue }
-                let stem = ((byID[representative.1]?.path ?? "") as NSString).lastPathComponent as NSString
+                // samples.name is the display name, without the leading track number.
+                let shown = try String.fetchOne(db, sql: "SELECT name FROM samples WHERE id = ?", arguments: [representative.1])
+                let stem = (shown ?? ((byID[representative.1]?.path ?? "") as NSString).lastPathComponent) as NSString
                 try db.execute(
                     sql: "INSERT INTO sample_groups (location_id, folder, key, name, representative_id) VALUES (?, ?, ?, ?, ?)",
                     arguments: [locationID, group.folder, group.key, stem.deletingPathExtension, representative.1])
