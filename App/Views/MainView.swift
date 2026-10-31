@@ -26,7 +26,7 @@ struct MainView: View {
                         SampleListView(browse: browse, playback: playback, selection: $selection, addLocation: { importing = true })
                         if showingKit, let kit {
                             Divider()
-                            EldrumEditorView(kit: kit, browse: browse, selection: $selection)
+                            EldrumEditorView(kit: kit, browse: browse, playback: playback, selection: $selection)
                         }
                     }
                     .navigationSplitViewColumnWidth(min: 400, ideal: 520)

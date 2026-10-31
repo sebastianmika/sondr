@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 struct EldrumEditorView: View {
     let kit: EldrumKitModel
     let browse: BrowseModel
+    let playback: PlaybackModel
     @Binding var selection: Set<Int64>
 
     private var selected: SampleRow? {
@@ -54,14 +55,23 @@ struct EldrumEditorView: View {
         .padding(6)
         .background(RoundedRectangle(cornerRadius: 6).strokeBorder(.secondary.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [4])))
         .contentShape(Rectangle())
-        .onTapGesture { if let id = pad?.sampleID { selection = [id] } }
-        .help(pad?.sampleID == nil ? "" : "Show this sample in the list")
+        .onTapGesture { if let id = pad?.sampleID { tap(id) } }
+        .help(pad?.sampleID == nil ? "" : "Show this sample in the list; click again to play it")
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             guard let provider = providers.first else { return false }
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
                 if let url { Task { @MainActor in await kit.assign(path: url.path, to: index) } }
             }
             return true
+        }
+    }
+
+    /// A first click shows the sample; a click on the one already selected plays it again from the start.
+    private func tap(_ id: Int64) {
+        if selection == [id] {
+            if let row = browse.row(id) { playback.play(row) }
+        } else {
+            selection = [id]
         }
     }
 
