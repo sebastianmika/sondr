@@ -1,5 +1,6 @@
 import SondrCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Settings → Locations: folders in the library, their tags, and the blacklist for all of them.
 struct LocationsSettingsView: View {
@@ -21,6 +22,10 @@ struct LocationsSettingsView: View {
                 }
                 HStack {
                     Button("Add Location…") { importing = true }
+                    Button("Export…") { exportLocations() }.disabled(app.locations.isEmpty)
+                        .help("Save the settings of all locations as a JSON file")
+                    Button("Import…") { importLocationsFile() }
+                        .help("Queue the locations of an exported JSON file; known ones are skipped")
                     Button("Rescan All") { Task { await app.rescanAll() } }
                         .disabled(busy || app.locations.isEmpty)
                     Button(app.stats.pending > 0 ? "Index \(app.stats.pending.formatted())" : "Index") {
@@ -55,6 +60,23 @@ struct LocationsSettingsView: View {
             Button("Remove from Library", role: .destructive) { Task { await app.removeLocation(location) } }
         } message: { location in
             Text("\(location.sampleCount.formatted()) samples that are only found here leave the library, with their tags. The audio files are not touched.")
+        }
+    }
+
+    private func exportLocations() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "export.json"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { try app.exportLocations().write(to: url) } catch { app.message = error.localizedDescription }
+    }
+
+    private func importLocationsFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task {
+            do { try await app.importLocations(Data(contentsOf: url)) } catch { app.message = error.localizedDescription }
         }
     }
 

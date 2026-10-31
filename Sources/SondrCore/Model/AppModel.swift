@@ -191,6 +191,34 @@ public final class AppModel {
         ])
     }
 
+    /// The settings of all locations as JSON, for ``importLocations(_:)``.
+    public func exportLocations() throws -> Data {
+        try LocationExport(locations: locations).json()
+    }
+
+    /// Queues the locations of an export that are not in the library yet and returns how many were queued and
+    /// how many were skipped (already known, or listed twice).
+    @discardableResult
+    public func importLocations(_ data: Data) async throws -> (queued: Int, skipped: Int) {
+        let export = try LocationExport.decode(data)
+        var known = Set(locations.map(\.path))
+        var items: [QueuedScan] = []
+        for entry in export.locations {
+            let url = URL(fileURLWithPath: entry.path)
+            guard known.insert(LibraryScanner.realURL(url).path).inserted else { continue }
+            _ = try TagRuleSet(entry.tagging.rules)
+            items.append(
+                QueuedScan(
+                    url: url, extensions: entry.typeFilter.map { Set($0.split(separator: ",").map(String.init)) },
+                    maxLength: entry.maxLength, tagging: entry.tagging, multisampleRules: entry.multisampleRules,
+                    name: entry.name == url.lastPathComponent ? nil : entry.name, index: true))
+        }
+        let result = (queued: items.count, skipped: export.locations.count - items.count)
+        note("Import: \(result.queued) locations queued, \(result.skipped) skipped as already known.")
+        await enqueue(items)
+        return result
+    }
+
     /// Scans every known location again, one after the other.
     public func rescanAll() async {
         await enqueue(locations.map(rescanItem))

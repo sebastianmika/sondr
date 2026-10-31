@@ -953,3 +953,28 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     #expect(app.notices[1].hasPrefix("Second: "))
     #expect(app.message == nil)
 }
+
+@MainActor @Test func exportedLocationsComeBackOnImportAndKnownOnesAreSkipped() async throws {
+    let work = try Workspace(files: 5)
+    defer { work.remove() }
+    let app = work.model()
+    await app.start()
+    let tagging = LocationTagging(extraTags: ["acoustic"], rules: [TagRule(kind: .text, pattern: "kick")])
+    await app.addLocation(work.library, tagging: tagging, name: "My Pack")
+    let data = try app.exportLocations()
+
+    let again = try await app.importLocations(data)
+    #expect(again.queued == 0 && again.skipped == 1)
+
+    await app.removeLocation(try #require(app.locations.first))
+    let restored = try await app.importLocations(data)
+    #expect(restored.queued == 1 && restored.skipped == 0)
+    let location = try #require(app.locations.first)
+    #expect(location.name == "My Pack")
+    #expect(location.tagging == tagging)
+}
+
+@Test func importOfANewerFormatIsRefused() {
+    let data = Data(#"{"version": 99, "locations": []}"#.utf8)
+    #expect(throws: LocationExportError.self) { try LocationExport.decode(data) }
+}
