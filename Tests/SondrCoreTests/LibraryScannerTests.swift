@@ -70,7 +70,7 @@ private func scalar(_ database: LibraryDatabase, _ sql: String) async throws -> 
     defer { tree.remove() }
     let database = try LibraryDatabase(inMemory: ())
 
-    let summary = try await try LibraryScanner(database: database).scan(root: tree.root)
+    let summary = try await LibraryScanner(database: database).scan(root: tree.root)
 
     #expect(summary.new == 3)
     #expect(summary.duplicate == 1)
@@ -92,7 +92,7 @@ private func scalar(_ database: LibraryDatabase, _ sql: String) async throws -> 
     defer { tree.remove() }
     try tree.add("snare_basic.wav", as: "kits/808/snare.wav")
     let database = try LibraryDatabase(inMemory: ())
-    _ = try await try LibraryScanner(database: database).scan(root: tree.root)
+    _ = try await LibraryScanner(database: database).scan(root: tree.root)
 
     let row = try await database.writer.read { db -> [String: String] in
         let row = try Row.fetchOne(db, sql: "SELECT * FROM samples")!
@@ -310,7 +310,7 @@ private func scalar(_ database: LibraryDatabase, _ sql: String) async throws -> 
     let total = LibraryScanner.batchSize + 20
     for i in 0..<total { try tree.add("kick_short.wav", as: "k\(i).wav") }
     let database = try LibraryDatabase(inMemory: ())
-    let summary = try await try LibraryScanner(database: database).scan(root: tree.root)
+    let summary = try await LibraryScanner(database: database).scan(root: tree.root)
     #expect(summary.new == 1)
     #expect(summary.duplicate == total - 1)
     #expect(try await scalar(database, "SELECT count(*) FROM sample_paths") == total)
