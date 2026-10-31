@@ -303,7 +303,19 @@ Repeat the zone for pitches 62, 64, 65, 67, 69, 71 and 72.
 - The `trim-*` chain mode, which no factory file uses, and whether loop points are then file- or region-relative.
 - FLAC and AIFF import, and limits on zones, layers, slots and RAM.
 - The exact `User/` subfolder names.
+- Whether the device accepts a `#` comment line below the header (Sondr writes one, see §11), and a kit with fewer than 8 zones (Sondr leaves empty pads out).
 - Reports: round robin working only on the first 3 tracks of an edited `.eldrum`, and an alleged OS 1.2.0 loading regression [F].
+
+## 11. Sondr's eldrum builder
+
+The format has no field for where a sample came from, so Sondr keeps that outside the mapping. Code: `Sources/SondrCore/Tonverk/`.
+
+- **Folder.** `<name>/` holds `<name>.eldrum`, one `<pad>_<source name>.wav` per filled pad and `<name>.sondr.json`. File names are ASCII (other characters become `_`). Export never overwrites a folder and refuses a destination inside a library location.
+- **Audio.** A WAV that is already 24-bit integer PCM at 48 kHz is copied unchanged. Anything else is converted. Mono and stereo only. Loop points are not carried over.
+- **Sidecar** (`<name>.sondr.json`, versioned, a newer version is rejected). Per pad: `pad` (index into the pitch list), `content_hash` (SHA-256 of the source file, the library's sample identity), `original_path` and `filename` (the WAV in the folder). Sondr links a pad back to the library by hash, so a moved source still resolves. An entry whose `filename` no longer matches the mapping is ignored.
+- **Comment line.** The mapping gets `# sondr: sources in <name>.sondr.json` below the header, for a reader that has lost the sidecar. **Not tested on the device**; `EldrumExport.write(..., comment: false)` leaves it out.
+- **Foreign kits.** Without a sidecar, Sondr hashes each WAV and looks it up in the library, which only matches unconverted copies. Other pads show the WAV name. Kits with several velocity layers or round-robin slots load with the first sample of each pad and a warning, since saving would drop the rest.
+- **Not covered.** Velocity layers, round robin, loop points, `.elmulti`, `.tvpst`.
 
 ## References
 
