@@ -42,6 +42,17 @@ struct MapCanvasView: View {
     private var effective: MapViewport { viewport ?? fit ?? MapViewport(centre: .zero, scale: 1) }
 
     var body: some View {
+        // The content has fixed sizes derived from the measured size, so it is drawn in an overlay: as the
+        // view's own size it would become the column's minimum width and the column could never shrink.
+        Color.clear
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .topLeading) { content }
+            .clipped()
+            .background(
+                GeometryReader { proxy in Color.clear.onAppear { outer = proxy.size }.onChange(of: proxy.size) { _, new in outer = new } })
+    }
+
+    private var content: some View {
         ZStack(alignment: .topLeading) {
             Theme.window
             Group {
@@ -57,9 +68,6 @@ struct MapCanvasView: View {
                 overlays(map)
             }
         }
-        .clipped()
-        .background(
-            GeometryReader { proxy in Color.clear.onAppear { outer = proxy.size }.onChange(of: proxy.size) { _, new in outer = new } })
         .task(id: FitKey(base: map?.current?.id, hasPreview: map?.preview != nil, hasDots: map?.dots != nil, rankWarp: map?.display.rankWarp ?? false, size: size)) {
             await computeFit()
         }
