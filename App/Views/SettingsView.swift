@@ -7,6 +7,7 @@ enum Preferences {
     static let autoAudition = "autoAudition"
     static let settingsTab = "settingsTab"
     static let showSoundMap = "showSoundMap"
+    static let showTonverkKit = "showTonverkKit"
     static let groupMultisamples = "groupMultisamples"
     static let explorerTab = "explorerTab"
     static let explorerHeight = "explorerHeight"

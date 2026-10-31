@@ -12,7 +12,8 @@ struct MainView: View {
     @State private var showingFailures = false
     @State private var importing = false
     @State private var adding: LocationEditor.Mode?
-    @State private var buildingKit = false
+    @State private var kit: EldrumKitModel?
+    @AppStorage(Preferences.showTonverkKit) private var showingKit = false
 
     var body: some View {
         Group {
@@ -21,8 +22,14 @@ struct MainView: View {
                     SidebarView(selection: $sidebar, browse: browse, showingFailures: $showingFailures, addLocation: { importing = true })
                         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
                 } content: {
-                    SampleListView(browse: browse, playback: playback, selection: $selection, addLocation: { importing = true })
-                        .navigationSplitViewColumnWidth(min: 400, ideal: 520)
+                    VStack(spacing: 0) {
+                        SampleListView(browse: browse, playback: playback, selection: $selection, addLocation: { importing = true })
+                        if showingKit, let kit {
+                            Divider()
+                            EldrumEditorView(kit: kit, browse: browse, selection: selection)
+                        }
+                    }
+                    .navigationSplitViewColumnWidth(min: 400, ideal: 520)
                 } detail: {
                     DetailView(browse: browse, playback: playback, selection: selection)
                         .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
@@ -39,6 +46,7 @@ struct MainView: View {
             if browse == nil {
                 let model = BrowseModel(app: app)
                 browse = model
+                kit = EldrumKitModel(app: app)
                 await model.reload()
                 if ProcessInfo.processInfo.environment["SONDR_SELECT_FIRST"] != nil, let first = model.rows.first {
                     selection = [first.id]  // development aid, see SnapshotHook
@@ -54,8 +62,7 @@ struct MainView: View {
             if case .success(let url) = result { adding = .add(url) }
         }
         .sheet(item: $adding) { LocationEditor(mode: $0) }
-        .sheet(isPresented: $buildingKit) { EldrumEditorView() }
-        .toolbar { ToolbarItem { Button { buildingKit = true } label: { Label("Tonverk Kit", systemImage: "square.grid.4x3.fill") } } }
+        .toolbar { ToolbarItem { Toggle(isOn: $showingKit) { Label("Tonverk Kit", systemImage: "square.grid.4x3.fill") }.help("Show the Tonverk drum kit builder under the list") } }
         .alert(
             "Sondr",
             isPresented: Binding(get: { app.message != nil }, set: { if !$0 { app.message = nil } }),

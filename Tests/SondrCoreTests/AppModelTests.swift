@@ -1007,3 +1007,45 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     let data = Data(#"{"version": 99, "locations": []}"#.utf8)
     #expect(throws: LocationExportError.self) { try LocationExport.decode(data) }
 }
+
+@MainActor @Test func eldrumKitAssignsLibrarySamplesAndReportsOthers() async throws {
+    let work = try Workspace()
+    defer { work.remove() }
+    let app = work.model(embedder: nil)
+    await app.start()
+    try await #require(app.database).writer.write { db in
+        try db.execute(sql: "INSERT INTO locations (id, path, added_at) VALUES (1, '/lib', 0)")
+        try db.execute(
+            sql: """
+                INSERT INTO samples (id, content_hash, canonical_path, filename, rel_path, duration, sample_rate,
+                    channels, format, file_size, file_mtime, scanned_at)
+                VALUES (1, 'h1', '/lib/kick.wav', 'kick.wav', 'kick.wav', 1, 48000, 1, 'wav', 1, 0, 0)
+                """)
+        try db.execute(sql: "INSERT INTO sample_paths (sample_id, path, location_id) VALUES (1, '/lib/kick.wav', 1)")
+    }
+    let kit = EldrumKitModel(app: app)
+
+    await kit.assign(path: "/lib/kick.wav", to: 2)
+    #expect(kit.pads[2] == .init(source: .init(contentHash: "h1", path: "/lib/kick.wav"), title: "kick.wav"))
+    #expect(kit.canExport)
+
+    await kit.assign(path: "/elsewhere/snare.wav", to: 3)
+    #expect(kit.pads[3] == nil)
+    #expect(app.message?.contains("not in the library") == true)
+
+    kit.clear(pad: 2)
+    #expect(!kit.canExport)
+}
+
+@MainActor @Test func eldrumKitRefusesToExportInsideALocation() async throws {
+    let work = try Workspace(files: 1)
+    defer { work.remove() }
+    let app = work.model(embedder: nil)
+    await app.start()
+    await app.addLocation(work.library)
+    await app.refresh()
+    let kit = EldrumKitModel(app: app)
+
+    await kit.export(into: work.library)
+    #expect(app.message == "Pick a folder outside your library locations.")
+}
