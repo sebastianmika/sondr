@@ -115,6 +115,17 @@ public enum SampleSortKey: String, CaseIterable, Sendable {
     case filename, path, duration, added, clusterScore
     case brightness, percussiveness, energy, tonality, noisiness
 
+    /// The ORDER BY terms. NULLs (not indexed yet) go last in either direction; the id keeps paging stable.
+    /// Columns that are never NULL skip the NULL term, so that an index on the expression can serve the order.
+    func orderBy(ascending: Bool, grouped: Bool = false) -> String {
+        let order = orderExpression(grouped: grouped)
+        let direction = ascending ? "ASC" : "DESC"
+        switch self {
+        case .filename, .path, .duration, .added: return "\(order) \(direction), samples.id"
+        default: return "(\(order) IS NULL), \(order) \(direction), samples.id"
+        }
+    }
+
     /// With `grouped`, the statement joins `sample_groups` and a group row sorts by the group's name.
     func orderExpression(grouped: Bool = false) -> String {
         switch self {
@@ -232,21 +243,19 @@ public enum SampleQuery {
     /// those rows.
     public static func browse(
         _ db: Database, filter: SampleFilter, sort: SampleSort = SampleSort(), offset: Int = 0, limit: Int = 100,
-        collapseGroups: Bool = false
+        collapseGroups: Bool = false, withTotal: Bool = true
     ) throws -> SamplePage {
         let (conditions, arguments) = filter.conditions(dimStats: try dimStats(db, filter))
-        let direction = sort.ascending ? "ASC" : "DESC"
         let selected = collapseGroups ? "samples.id IN (SELECT id FROM first_of_group WHERE position = 1)" : conditions
         let withClause = collapseGroups ? "WITH \(firstOfGroup(conditions)) " : ""
-        let order = sort.key.orderExpression(grouped: collapseGroups)
-        // NULLs (not indexed yet) go last in either direction; the id keeps paging stable.
         let sql = """
             \(withClause)SELECT \(columns(grouped: collapseGroups)) FROM samples
             \(collapseGroups ? "LEFT JOIN sample_groups ON sample_groups.id = samples.group_id" : "") WHERE \(selected)
-            ORDER BY (\(order) IS NULL), \(order) \(direction), samples.id
+            ORDER BY \(sort.key.orderBy(ascending: sort.ascending, grouped: collapseGroups))
             LIMIT ? OFFSET ?
             """
         let rows = try Row.fetchAll(db, sql: sql, arguments: arguments + [limit, offset]).map(makeRow)
+        guard withTotal else { return SamplePage(rows: rows, total: 0) }
         let total = try Int.fetchOne(
             db,
             sql: collapseGroups
@@ -254,6 +263,25 @@ public enum SampleQuery {
                 : "SELECT count(*) FROM samples WHERE \(conditions)",
             arguments: arguments)!
         return SamplePage(rows: rows, total: total)
+    }
+
+    /// The zero-based position `browse` lists the sample at (its group's row when groups are collapsed),
+    /// or nil when the filter hides it.
+    public static func position(
+        _ db: Database, of id: Int64, filter: SampleFilter, sort: SampleSort = SampleSort(), collapseGroups: Bool = false
+    ) throws -> Int? {
+        let (conditions, arguments) = filter.conditions(dimStats: try dimStats(db, filter))
+        let selected = collapseGroups ? "samples.id IN (SELECT id FROM first_of_group WHERE position = 1)" : conditions
+        let withClause = collapseGroups ? "WITH \(firstOfGroup(conditions)) " : ""
+        let sql = """
+            \(withClause)SELECT position FROM (
+                SELECT samples.id AS sid, samples.group_id AS gid,
+                    ROW_NUMBER() OVER (ORDER BY \(sort.key.orderBy(ascending: sort.ascending, grouped: collapseGroups))) - 1 AS position
+                FROM samples
+                \(collapseGroups ? "LEFT JOIN sample_groups ON sample_groups.id = samples.group_id" : "") WHERE \(selected))
+            WHERE sid = ?\(collapseGroups ? " OR (gid IS NOT NULL AND gid = (SELECT group_id FROM samples WHERE id = ?))" : "")
+            """
+        return try Int.fetchOne(db, sql: sql, arguments: arguments + (collapseGroups ? [id, id] : [id]))
     }
 
     /// The members of a group in pitch order, whatever the filter. Each carries whether it matches `filter`

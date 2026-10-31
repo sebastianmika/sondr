@@ -105,6 +105,10 @@ public final class LibraryDatabase: Sendable {
             scanned_at REAL NOT NULL
         );
         CREATE INDEX samples_name ON samples(name);
+        CREATE INDEX samples_sort_filename ON samples(COALESCE(name, filename) COLLATE NOCASE, missing);
+        CREATE INDEX samples_sort_path ON samples(rel_path COLLATE NOCASE, missing);
+        CREATE INDEX samples_sort_duration ON samples(duration, missing);
+        CREATE INDEX samples_sort_added ON samples(scanned_at, missing);
         CREATE INDEX samples_embed_state ON samples(embed_state);
         CREATE INDEX samples_cluster_id ON samples(cluster_id);
         CREATE INDEX samples_group_id ON samples(group_id);

@@ -52,6 +52,8 @@ public final class BrowseModel {
     /// table whose rows turn into group rows (or back) can keep stale ones.
     public private(set) var listEpoch = 0
     public private(set) var rows: [SampleRow] = []
+    /// How many list positions come before ``rows``: non-zero when the list starts at the page of a revealed sample.
+    public private(set) var rowOffset = 0
     public private(set) var total = 0
     public private(set) var scores: [Int64: Float] = [:]
     public private(set) var content = Content.browse
@@ -75,7 +77,7 @@ public final class BrowseModel {
         self.app = app
     }
 
-    public var hasMore: Bool { content == .browse && rows.count < total }
+    public var hasMore: Bool { content == .browse && rowOffset + rows.count < total }
 
     // MARK: Loading
 
@@ -112,22 +114,45 @@ public final class BrowseModel {
         await loadPage(first: false, generation: generation)
     }
 
-    /// Loads further pages until the sample is among the rows, or there are none left.
-    /// shortcut: a sample inside a collapsed group never shows up, so this loads every page; fine for now.
+    /// Makes the list show `id`: leaves search results and drops the filters if they hide it, loads the one
+    /// page it is on and expands its group.
+    /// shortcut: the list then starts at that page, with no way to scroll up to the earlier ones until the next reload.
     public func reveal(_ id: Int64) async {
-        while !visibleIDs.contains(id), hasMore, !isLoading { await loadPage(first: false, generation: generation) }
+        if visibleIDs.contains(id) { return }
+        if content != .browse { await clearResults() }
+        var index = await position(of: id)
+        if index == nil {
+            filter = SampleFilter()
+            searchText = ""
+            await reload()
+            index = await position(of: id)
+        }
+        if !visibleIDs.contains(id), let index {
+            reloadTask?.cancel()
+            generation += 1
+            await loadPage(first: true, from: index / Self.pageSize * Self.pageSize, recount: false, generation: generation)
+        }
+        if showsGroups, let group = row(id)?.multisample?.groupID { await setExpanded(group, true) }
     }
 
-    private func loadPage(first: Bool, generation current: Int) async {
+    private func position(of id: Int64) async -> Int? {
+        guard let database = app.database else { return nil }
+        let filter = filter, sort = sort, collapse = collapseGroups
+        return (try? await database.writer.read { try SampleQuery.position($0, of: id, filter: filter, sort: sort, collapseGroups: collapse) }) ?? nil
+    }
+
+    /// `recount: false` is for replacing the rows while the filter, sort and grouping are unchanged: the total and the
+    /// highlight still hold.
+    private func loadPage(first: Bool, from start: Int = 0, recount: Bool = true, generation current: Int) async {
         guard let database = app.database else { return }
         isLoading = true
         defer { isLoading = false }
-        let offset = first ? 0 : rows.count
+        let offset = first ? start : rowOffset + rows.count
         let filter = filter, sort = sort, collapse = collapseGroups
         let size = Self.pageSize
         do {
             let page = try await database.writer.read {
-                try SampleQuery.browse($0, filter: filter, sort: sort, offset: offset, limit: size, collapseGroups: collapse)
+                try SampleQuery.browse($0, filter: filter, sort: sort, offset: offset, limit: size, collapseGroups: collapse, withTotal: first && recount)
             }
             guard current == generation else { return }  // a newer request superseded this one
             if first {
@@ -135,11 +160,12 @@ public final class BrowseModel {
                 showsGroups = collapse
                 listEpoch += 1
             }
+            if first { rowOffset = start }
             rows = first ? page.rows : rows + page.rows
-            total = page.total
+            if first && recount { total = page.total }
             scores = [:]
             errorMessage = nil
-            if first { await updateHighlight(generation: current) }
+            if first && recount { await updateHighlight(generation: current) }
         } catch {
             if current == generation { errorMessage = error.localizedDescription }
         }

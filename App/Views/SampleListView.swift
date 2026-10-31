@@ -11,7 +11,8 @@ struct SampleListView: View {
     @State private var sortOrder = [KeyPathComparator(\SampleRow.name)]
     @AppStorage(Preferences.showSoundMap) private var showSoundMap = false
     @AppStorage(Preferences.groupMultisamples) private var groupMultisamples = true
-    @State private var scrollTarget: Int?
+    @State private var scrollTarget: ScrollRequest?
+    @State private var scrollSerial = 0
     @State private var pendingGroup: [SampleRow] = []
 
     private static let pageStep = 10
@@ -103,12 +104,12 @@ struct SampleListView: View {
         }
         .onChange(of: selection) { _, ids in
             Task {
-                if ids.count == 1, let id = ids.first {
-                    await browse.pin(id)
-                    await browse.reveal(id)
-                    scrollTarget = browse.visibleIDs.firstIndex(of: id)
-                }
+                if ids.count == 1, let id = ids.first { await browse.pin(id) }
                 playback.selectionChanged(to: ids.count == 1 ? ids.first.flatMap { browse.row($0) } : nil)
+                if ids.count == 1, let id = ids.first {
+                    await browse.reveal(id)
+                    requestScroll(to: id)
+                }
             }
         }
         .onKeyPress(.space) {
@@ -118,7 +119,7 @@ struct SampleListView: View {
         }
         .background(
             TableScroller(
-                rowIndex: scrollTarget, rowCount: browse.visibleIDs.count,
+                request: scrollTarget, rowCount: browse.visibleIDs.count,
                 onArrow: { down, large in move(by: (down ? 1 : -1) * (large ? Self.pageStep : 1)) == .handled }))
         .searchable(text: $browse.searchText, placement: .toolbar, prompt: browse.mode == .keyword ? "Filter by name or folder" : "Describe a sound, e.g. “warm analog pad”")
         .toolbar {
@@ -201,7 +202,7 @@ struct SampleListView: View {
 
     private var footer: some View {
         HStack {
-            Text(browse.content == .browse ? "\(browse.rows.count) of \(browse.total)" : "\(browse.total) results")
+            Text(browse.content == .browse ? "\(browse.rowOffset + browse.rows.count) of \(browse.total)" : "\(browse.total) results")
                 .font(.sondrMono(size: 11)).foregroundStyle(Theme.textDim)
             if browse.isLoading { ProgressView().controlSize(.mini) }
             Spacer()
@@ -276,10 +277,16 @@ struct SampleListView: View {
         }
     }
 
+    private func requestScroll(to id: Int64) {
+        guard let index = browse.visibleIDs.firstIndex(of: id) else { return }
+        scrollSerial += 1
+        scrollTarget = ScrollRequest(index: index, serial: scrollSerial)
+    }
+
     private func move(by offset: Int) -> KeyPress.Result {
         guard let id = browse.rowID(moving: offset, from: selection) else { return .ignored }
         selection = [id]
-        scrollTarget = browse.visibleIDs.firstIndex(of: id)
+        requestScroll(to: id)
         return .handled
     }
 
@@ -303,13 +310,20 @@ struct SampleListView: View {
 /// for the arrow keys. SwiftUI's `onKeyPress` delivers only the first press of a held key here, so the arrows
 /// are read from the event stream, where key repeats arrive too. One row per arrow, a page for Page Up/Down or
 /// with Shift. `onArrow(down, large)` returns whether it handled the key.
+private struct ScrollRequest: Equatable {
+    let index: Int
+    let serial: Int
+}
+
 private struct TableScroller: NSViewRepresentable {
-    let rowIndex: Int?
+    /// Each request is carried out once; SwiftUI updates this view again and again with the same one.
+    let request: ScrollRequest?
     let rowCount: Int
     let onArrow: (_ down: Bool, _ large: Bool) -> Bool
 
     @MainActor final class Coordinator {
         var rowCount = 0
+        var handledSerial = 0
         var onArrow: (Bool, Bool) -> Bool = { _, _ in false }
         weak var view: NSView?
         nonisolated(unsafe) var monitor: Any?
@@ -356,10 +370,16 @@ private struct TableScroller: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {
         context.coordinator.rowCount = rowCount
         context.coordinator.onArrow = onArrow
-        guard let rowIndex else { return }
-        DispatchQueue.main.async {
-            guard let root = view.window?.contentView else { return }
-            Self.table(in: root, rows: rowCount)?.scrollRowToVisible(rowIndex)
+        let coordinator = context.coordinator
+        guard let request, request.serial != coordinator.handledSerial else { return }
+        coordinator.handledSerial = request.serial
+        // Give SwiftUI time to finish building a table that was just replaced; scrolling it earlier made it
+        // create cells on a view that was going away.
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(80)) { [weak view] in
+            guard let root = view?.window?.contentView,
+                  let table = Self.table(in: root, rows: coordinator.rowCount), table.window != nil,
+                  request.index < table.numberOfRows else { return }
+            table.scrollRowToVisible(request.index)
         }
     }
 

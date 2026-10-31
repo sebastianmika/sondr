@@ -954,6 +954,35 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     #expect(app.message == nil)
 }
 
+@MainActor @Test func revealLoadsPagesAndDropsFiltersAndResultsThatHideTheSample() async throws {
+    let work = try Workspace(files: 450)
+    defer { work.remove() }
+    let app = await indexedApp(files: 450, work)
+    let browse = BrowseModel(app: app)
+    await browse.reload()
+    let all = try await #require(app.database).writer.read { try Int64.fetchAll($0, sql: "SELECT id FROM samples ORDER BY lower(name)") }
+    let last = try #require(all.last)
+
+    await browse.reveal(last)
+    #expect(browse.visibleIDs.contains(last))
+    #expect(browse.rows.count <= BrowseModel.pageSize)
+    #expect(browse.rowOffset == 400)
+
+    browse.filter.keyword = "zzz-no-such-sample"
+    await browse.reload()
+    #expect(browse.rows.isEmpty)
+    await browse.reveal(all[0])
+    #expect(browse.filter == SampleFilter())
+    #expect(browse.visibleIDs.contains(all[0]))
+
+    await browse.showSimilar(to: try #require(browse.row(all[0])))
+    #expect(browse.content != .browse)
+    let outside = try #require(all.first { !browse.visibleIDs.contains($0) })
+    await browse.reveal(outside)
+    #expect(browse.content == .browse)
+    #expect(browse.visibleIDs.contains(outside))
+}
+
 @MainActor @Test func exportedLocationsComeBackOnImportAndKnownOnesAreSkipped() async throws {
     let work = try Workspace(files: 5)
     defer { work.remove() }
