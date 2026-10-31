@@ -1026,7 +1026,7 @@ func aPreviewDoesNotStartWhileIndexingRuns() async throws {
     let kit = EldrumKitModel(app: app)
 
     await kit.assign(path: "/lib/kick.wav", to: 2)
-    #expect(kit.pads[2] == .init(source: .init(contentHash: "h1", path: "/lib/kick.wav"), title: "kick.wav"))
+    #expect(kit.pads[2] == .init(source: .init(contentHash: "h1", path: "/lib/kick.wav"), title: "kick.wav", sampleID: 1))
     #expect(kit.canExport)
 
     await kit.assign(path: "/elsewhere/snare.wav", to: 3)

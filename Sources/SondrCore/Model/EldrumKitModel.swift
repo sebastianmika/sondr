@@ -10,6 +10,8 @@ public final class EldrumKitModel {
         public var source: EldrumExport.Source
         public var title: String
         public var note: String?
+        /// The library sample behind the pad, nil when the library does not know it.
+        public var sampleID: Int64?
     }
 
     public var name = "My Kit" {
@@ -34,12 +36,15 @@ public final class EldrumKitModel {
     /// Puts the library sample with this file path on the pad; a path the library does not hold is reported.
     public func assign(path: String, to pad: Int) async {
         do {
-            let source = try await app.database?.writer.read { try EldrumLoad.source($0, path: path) }
-            guard let source else {
+            let found = try await app.database?.writer.read { db -> (EldrumExport.Source, Int64?)? in
+                guard let source = try EldrumLoad.source(db, path: path) else { return nil }
+                return (source, try EldrumLoad.sampleID(db, hash: source.contentHash))
+            }
+            guard let (source, sampleID) = found else {
                 app.message = "\(URL(fileURLWithPath: path).lastPathComponent) is not in the library. Add its folder as a location first."
                 return
             }
-            pads[pad] = Pad(source: source, title: URL(fileURLWithPath: path).lastPathComponent)
+            pads[pad] = Pad(source: source, title: URL(fileURLWithPath: path).lastPathComponent, sampleID: sampleID)
         } catch { app.message = error.localizedDescription }
     }
 
@@ -51,8 +56,8 @@ public final class EldrumKitModel {
             pads = zip(loaded.pads, loaded.sources).map { pad, source in
                 guard let pad, let source else { return nil }
                 switch pad.link {
-                case .linked(_, let path, _):
-                    return Pad(source: source, title: URL(fileURLWithPath: path).lastPathComponent)
+                case .linked(let sampleID, let path, _):
+                    return Pad(source: source, title: URL(fileURLWithPath: path).lastPathComponent, sampleID: sampleID)
                 case .notInLibrary(let originalPath, _):
                     let was = URL(fileURLWithPath: originalPath).lastPathComponent
                     return Pad(source: source, title: pad.filename, note: "Not in library (was \(was))")

@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 struct EldrumEditorView: View {
     let kit: EldrumKitModel
     let browse: BrowseModel
-    let selection: Set<Int64>
+    @Binding var selection: Set<Int64>
 
     private var selected: SampleRow? {
         selection.count == 1 ? selection.first.flatMap { browse.row($0) } : nil
@@ -53,6 +53,9 @@ struct EldrumEditorView: View {
         }
         .padding(6)
         .background(RoundedRectangle(cornerRadius: 6).strokeBorder(.secondary.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [4])))
+        .contentShape(Rectangle())
+        .onTapGesture { if let id = pad?.sampleID { selection = [id] } }
+        .help(pad?.sampleID == nil ? "" : "Show this sample in the list")
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             guard let provider = providers.first else { return false }
             _ = provider.loadObject(ofClass: URL.self) { url, _ in

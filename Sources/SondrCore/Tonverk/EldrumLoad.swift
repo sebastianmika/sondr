@@ -66,6 +66,11 @@ public enum EldrumLoad {
 }
 
 extension EldrumLoad {
+    /// The library sample with this content hash, if any.
+    public static func sampleID(_ db: Database, hash: String) throws -> Int64? {
+        try Int64.fetchOne(db, sql: "SELECT id FROM samples WHERE content_hash = ?", arguments: [hash])
+    }
+
     /// The library sample that has this file path, as an export source. Nil when the path is not in the library.
     public static func source(_ db: Database, path: String) throws -> EldrumExport.Source? {
         try String.fetchOne(
